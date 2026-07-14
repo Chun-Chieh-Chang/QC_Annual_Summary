@@ -662,7 +662,7 @@ function App() {
       const data = isJSON ? await parseSummaryJSON(file) : await parseSummaryExcel(file);
       const yearMatch = isJSON
         ? (data._meta?.year ? String(data._meta.year) : null)
-        : file.name.match(/(20\d{2})/);
+        : (file.name.match(/(20\d{2})/)?.[1] || null);
       const year = yearMatch || "未知年度";
       // Strip internal meta key before storing
       if (data._meta) delete data._meta;
