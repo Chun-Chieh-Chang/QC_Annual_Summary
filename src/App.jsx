@@ -86,6 +86,21 @@ function App() {
     setActiveFilterPopover(null);
   }, [scannedRows]);
 
+  // 當 mappings 變更時，重新計算 scannedRows 的 foundName 與 status
+  useEffect(() => {
+    if (scannedRows.length === 0) return;
+    const updated = scannedRows.map(row => {
+      const code = row.foundCode;
+      if (!/^QC\d{5}-R\d{2}$/.test(code)) return row; // 非 QC 編碼（錯誤/無）保持不變
+      return {
+        ...row,
+        foundName: mappings[code] || "無對照編碼",
+        status: mappings[code] ? "matched" : "unmatched"
+      };
+    });
+    setScannedRows(updated);
+  }, [mappings]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const folderInputRef = useRef(null);
   const leftPanelRef = useRef(null);
   const [leftPanelHeight, setLeftPanelHeight] = useState(null);
