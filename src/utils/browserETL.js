@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const LETTER_MONTH = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 10, K: 11, L: 12 };
 
-const isUUID = (str) => {
+export const isUUID = (str) => {
   if (!str) return false;
   const s = str.trim().toLowerCase();
   
@@ -867,4 +867,115 @@ export const exportSummaryExcelInBrowser = (counts, year) => {
   addCategorySheet('出貨檢驗(QC10008-R02)', 'QC10008-R02', '出貨檢驗');
 
   XLSX.writeFile(wb, `${year}品檢報表統計.xlsx`);
+};
+
+/**
+ * QC 部門與品項對照表 — 讓 AI 理解 QC Code 的中文意義
+ */
+const QC_META = {
+  'QC10002-R02': { title: '原物料/配件進料品檢', sheetLabel: '原物料品檢' },
+  'QC10004-R02': { title: 'QIP 尺寸檢驗', sheetLabel: 'QIP' },
+  'QC10006-R01': { title: '裝配對樣巡檢記錄表', sheetLabel: '裝配對樣巡檢' },
+  'QC10006-R02': { title: '半成品檢驗記錄表', sheetLabel: '半成品品檢' },
+  'QC10007-R01': { title: '完成品裝配品檢紀錄表', sheetLabel: '完成品品檢' },
+  'QC10007-R03': { title: '零組件入庫品檢表', sheetLabel: '零組件入庫品檢' },
+  'QC10008-R02': { title: '出貨品檢記錄表', sheetLabel: '出貨檢驗' }
+};
+
+export const exportSummaryJSONInBrowser = (counts, year) => {
+  const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  const monthArray = (data) => MONTHS.map(m => (data && data[m]) || 0);
+  const totalArray = (data) => monthArray(data).reduce((a, b) => a + b, 0);
+
+  const categories = [];
+  let grandTotal = 0;
+
+  // 依固定順序輸出 QC 類別，確保每次輸出結構一致
+  const QC_ORDER = ['QC10002-R02', 'QC10004-R02', 'QC10006-R01', 'QC10006-R02', 'QC10007-R01', 'QC10007-R03', 'QC10008-R02'];
+
+  QC_ORDER.forEach(qcCode => {
+    const qcCounts = counts[qcCode];
+    if (!qcCounts) return;
+
+    const meta = QC_META[qcCode] || {};
+    const subCategories = [];
+    let categoryGrandTotal = 0;
+    const monthlyTotals = {};
+    MONTHS.forEach(m => { monthlyTotals[m] = 0; });
+
+    // 固定欄位排序 (QC10004-R02, QC10007-R01)
+    let keys;
+    if (qcCode === 'QC10004-R02') {
+      keys = ['QIP-Setup', 'QIP-Patrol', '押出-Setup', '押出-Patrol'];
+    } else if (qcCode === 'QC10007-R01') {
+      keys = ['Biometrix', 'MarMed', 'Saxon', 'Vivus'];
+    } else {
+      keys = Object.keys(qcCounts).filter(k => k !== '未分類').sort();
+      if (qcCounts['未分類']) keys.push('未分類');
+    }
+
+    keys.forEach(key => {
+      const monthly = qcCounts[key] || {};
+      const monthData = {};
+      let subTotal = 0;
+      MONTHS.forEach(m => {
+        const val = monthly[m] || 0;
+        monthData[m] = val;
+        subTotal += val;
+        monthlyTotals[m] += val;
+      });
+      categoryGrandTotal += subTotal;
+
+      subCategories.push({
+        name: key,
+        monthly: monthData,
+        total: subTotal
+      });
+    });
+
+    const categoryMonthlyTotals = {};
+    let categoryMonthlyGrandTotal = 0;
+    MONTHS.forEach(m => {
+      categoryMonthlyTotals[m] = monthlyTotals[m];
+      categoryMonthlyGrandTotal += monthlyTotals[m];
+    });
+
+    categories.push({
+      qcCode,
+      title: meta.title || '',
+      sheetLabel: meta.sheetLabel || '',
+      subCategories,
+      monthlyTotals: categoryMonthlyTotals,
+      grandTotal: categoryMonthlyGrandTotal
+    });
+
+    grandTotal += categoryMonthlyGrandTotal;
+  });
+
+  const output = {
+    meta: {
+      year,
+      exportedAt: new Date().toISOString(),
+      format: 'QC_Annual_Summary_v1',
+      description: `QC 年度品檢報表統計 (${year}年) — 結構化 JSON 格式，便於 AI 工具解析與分析`,
+      totalRecords: grandTotal
+    },
+    categories,
+    overallSummary: {
+      totalByCategory: Object.fromEntries(
+        categories.map(c => [c.qcCode, c.grandTotal])
+      ),
+      grandTotal
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${year}品檢報表統計.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };

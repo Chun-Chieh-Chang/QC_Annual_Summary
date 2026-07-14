@@ -447,3 +447,109 @@ export const parseSummaryExcel = (file) => {
     reader.readAsArrayBuffer(file);
   });
 };
+
+/**
+ * Parse QC Annual Summary JSON file into the same format as parseSummaryExcel,
+ * so the McKinsey Dashboard works seamlessly with both .xlsx and .json inputs.
+ * 
+ * Expected JSON structure matches the format from browserETL.js exportSummaryJSONInBrowser:
+ * {
+ *   meta: { year, exportedAt, format: 'QC_Annual_Summary_v1', totalRecords },
+ *   categories: [{
+ *     qcCode, title, sheetLabel,
+ *     subCategories: [{ name, monthly: { 1: count, ... }, total }],
+ *     monthlyTotals: { 1: count, ... }, grandTotal
+ *   }],
+ *   overallSummary: { totalByCategory: {}, grandTotal }
+ * }
+ */
+export const parseSummaryJSON = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target.result);
+        if (!json || json.meta?.format !== 'QC_Annual_Summary_v1') {
+          reject(new Error('不支援的 JSON 格式'));
+          return;
+        }
+
+        const sheetData = {};
+        const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+        // Map from qcCode to the exact sheet names used by exportSummaryExcelInBrowser
+        const EXCEL_SHEET_NAMES = {
+          'QC10002-R02': '原物料品檢(QC10002-R02)',
+          'QC10004-R02': 'QIP(QC10004-R02)',
+          'QC10006-R01': '裝配對樣巡檢(QC10006-R01)',
+          'QC10006-R02': '半成品品檢(QC10006-R02)',
+          'QC10007-R01': '完成品品檢(QC10007-R01 R02)', // NOTE: Excel uses "R01 R02"
+          'QC10007-R03': '零組件入庫品檢(QC10007-R03)',
+          'QC10008-R02': '出貨檢驗(QC10008-R02)'
+        };
+
+        // Display labels for QIP sub-categories, matching exportSummaryExcelInBrowser fixedColumns
+        const QIP_LABELS = {
+          'QIP-Setup': 'Setup(射出)',
+          'QIP-Patrol': '巡檢(射出)',
+          '押出-Setup': 'Setup(押出)',
+          '押出-Patrol': '巡檢(押出)'
+        };
+
+        // Convert each category to a sheet (2D array matching Excel row format)
+        json.categories.forEach(cat => {
+          const sheetName = EXCEL_SHEET_NAMES[cat.qcCode]
+            || (cat.sheetLabel ? `${cat.sheetLabel}(${cat.qcCode})` : cat.qcCode);
+
+          const rows = [];
+
+          // Row 0: Title
+          rows.push([cat.title || sheetName]);
+
+          // Row 1: Headers — 月份 + sub-category display labels + 小計
+          const hasTotal = cat.qcCode !== 'QC10006-R01';
+          const labels = cat.qcCode === 'QC10004-R02'
+            ? cat.subCategories.map(s => QIP_LABELS[s.name] || s.name)  // QIP uses display labels
+            : cat.subCategories.map(s => s.name);
+          const headers = ['月份', ...labels];
+          if (hasTotal) headers.push('小計');
+          rows.push(headers);
+
+          // Rows 2-13: Monthly data
+          MONTHS.forEach(m => {
+            const row = [`${m}月`];
+            let monthSum = 0;
+            cat.subCategories.forEach(s => {
+              const val = s.monthly[m] || 0;
+              row.push(val);
+              monthSum += val;
+            });
+            if (hasTotal) row.push(monthSum);
+            rows.push(row);
+          });
+
+          // Row 14: Totals row
+          const totalRow = ['小計'];
+          let grandSum = 0;
+          cat.subCategories.forEach(s => {
+            totalRow.push(s.total);
+            grandSum += s.total;
+          });
+          if (hasTotal) totalRow.push(grandSum);
+          rows.push(totalRow);
+
+          sheetData[sheetName] = rows;
+        });
+
+        // Store raw JSON meta on the data for downstream use
+        sheetData._meta = json.meta;
+
+        resolve(sheetData);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsText(file);
+  });
+};

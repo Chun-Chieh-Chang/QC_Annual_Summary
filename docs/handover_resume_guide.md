@@ -4,7 +4,7 @@
 - **專案名稱**：FileName_WorkSheet_Extract
 - **分支**：`feature/dynamic-columns`（已合併至 `main`）
 - **部署**：GitHub Pages（透過 GitHub Actions 自動部署）
-- **最新完成進度**：民國年日期支援、Chrome UUID 防禦、半成品雙重驗證
+- **最新完成進度**：程式碼清理（重複 isUUID 合併、dead exportFieldMapping 移除）、DEV_LOG.md 去重、JSON 匯入儀表板支援
 
 ## 核心架構摘要
 
@@ -35,6 +35,16 @@
 
 ### 7. ETL 計算結果緩存
 - `cachedCounts` 狀態避免重複掃描，支援即時重複匯出
+
+### 8. JSON 匯入儀表板
+- `parseSummaryJSON`（位於 `excelParser.js`）支援將 ETL 匯出之 JSON 格式報表（`QC_Annual_Summary_v1`）直接載入 McKinsey 儀表板
+- QIP 子類別自動使用顯示標籤（`Setup(射出)`、`巡檢(射出)` 等），與 Excel 報表一致
+- 使用者可混合使用 Excel 與 JSON 來源進行跨格式分析
+
+### 9. 雙解析引擎
+- 新版引擎（`browserETL.js`）：動態欄位架構，自動展開品項
+- 舊版引擎（`browserETLLegacy.js`）：靜態欄位，保留原始規則
+- 介面下拉選單可無縫切換，便於 A/B 比對
 
 ## 關鍵檔案索引
 

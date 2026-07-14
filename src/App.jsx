@@ -1,25 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getMappings, saveMappings, resetMappings } from './utils/db';
-import { parseExcelFile, parseSummaryExcel } from './utils/excelParser';
-import { runETLInBrowser, exportSummaryExcelInBrowser } from './utils/browserETL';
+import { parseExcelFile, parseSummaryExcel, parseSummaryJSON } from './utils/excelParser';
+import { runETLInBrowser, exportSummaryExcelInBrowser, exportSummaryJSONInBrowser, isUUID } from './utils/browserETL';
 import * as XLSX from 'xlsx';
 
 const MONTH_LABELS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
-
-const isUUID = (str) => {
-  if (!str) return false;
-  const s = str.trim().toLowerCase();
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(s)) return true;
-  if (/^[0-9a-f]{32}$/.test(s)) return true;
-  if (s.length === 36 && /^[0-9a-f\-]+$/.test(s)) return true;
-  if (s.length >= 24 && /^[a-z0-9\-]+$/.test(s)) {
-    const hasDigit = /[0-9]/.test(s);
-    const hasAlpha = /[a-z]/.test(s);
-    const hasHyphen = /-/.test(s);
-    if ((hasDigit && hasAlpha) || hasHyphen) return true;
-  }
-  return false;
-};
 
 const MCK_COLORS = [
   '#007AFF', // Vivid Blue
@@ -362,8 +347,8 @@ function App() {
     if (!uploadedFiles || uploadedFiles.length === 0) return;
     
     if (cachedCounts && cachedCounts.year === year && cachedCounts.filesCount === uploadedFiles.length) {
-      exportSummaryExcelInBrowser(cachedCounts.data, year);
-      alert(`🎉 ${year} 年度品檢報表統計.xlsx 匯出成功！已下載至您的電腦。`);
+      exportSummaryJSONInBrowser(cachedCounts.data, year);
+      alert(`🎉 ${year} 年度品檢報表統計.json 已下載！`);
       return;
     }
 
@@ -387,8 +372,8 @@ function App() {
         filesCount: uploadedFiles.length
       });
 
-      exportSummaryExcelInBrowser(counts, year);
-      alert(`🎉 ${year} 年度品檢報表統計.xlsx 匯出成功！已下載至您的電腦。`);
+      exportSummaryJSONInBrowser(counts, year);
+      alert(`🎉 ${year} 年度品檢報表統計.json 已下載！（亦可點選「📥 下載 Excel 報表」按鈕取得傳統 Excel 格式）`);
     } catch (e) {
       if (e.message === 'ETL cancelled by user') {
         console.log('ETL cancelled');
@@ -400,6 +385,15 @@ function App() {
       setIsProcessingETL(false);
       setIsETLCancelled(false);
     }
+  };
+
+  // Re-export as Excel (legacy format for human reading)
+  const handleExportExcel = (year) => {
+    if (!cachedCounts || cachedCounts.year !== year) {
+      alert("請先執行一次「輸出 JSON 統計」以產生快取資料。");
+      return;
+    }
+    exportSummaryExcelInBrowser(cachedCounts.data, year);
   };
 
   // Export individual QC report sheets
@@ -618,221 +612,6 @@ function App() {
   };
 
   /**
-   * 匯出欄位映射數據（檔案級別）
-   * 使用 browserETL.js 的完整 ETL 邏輯來推斷 QC 標籤
-   * 格式：品管標籤編號,欄位名稱,資料路徑
-   */
-  const exportFieldMapping = async () => {
-    if (!uploadedFiles || uploadedFiles.length === 0) {
-      alert('請先選取檔案');
-      return;
-    }
-
-    const mappings = [];
-    const files = Array.from(uploadedFiles);
-    
-    // 從檔案路徑推斷初始 QC（使用 browserETL.js 的 detectQCFromFolder）
-    const FOLDER_QC_MAP = {
-      '半成品品檢表': 'QC10006-R02',
-      '原物料品檢': 'QC10002-R02',
-      '進料檢驗': 'QC10002-R02',
-      '出貨檢驗': 'QC10008-R02',
-      '裝配檢驗': 'QC10006-R02',
-      '裝配巡檢': 'QC10006-R01',
-      '零組件入庫': 'QC10007-R03',
-      '完成品品檢': 'QC10007-R01',
-      'QIP尺寸檢驗': 'QC10004-R02',
-      '射出檢驗': 'QC10004-R02',
-      '押出檢驗': 'QC10004-R02'
-    };
-    
-    const FORM_TITLE_MAP = {
-      '原物料/配件進料品檢表': 'QC10002-R02',
-      '進料檢驗紀錄表': 'QC10002-R02',
-      '裝配對樣巡檢記錄表': 'QC10006-R01',
-      '半成品檢驗記錄表': 'QC10006-R02',
-      '半成品巡檢品檢表': 'QC10006-R02',
-      'SUB-ASSEMBLED SETS QUALITY INSPECTION PLAN': 'QC10006-R02',
-      '完成品裝配品檢紀錄表': 'QC10007-R01',
-      '完成品裝配品檢記錄表': 'QC10007-R01',
-      'FINISHED SETS QUALITY INSPECTION PLAN': 'QC10007-R01',
-      '零組件入庫品檢表': 'QC10007-R03',
-      '出貨品檢記錄表': 'QC10008-R02',
-      'OUT-GOING QUALITY INSPECTION PLAN': 'QC10008-R02',
-      '出貨品檢報告': 'QC10008-R02'
-    };
-    
-    const detectQCFromFolder = (dirname) => {
-      const m = dirname.match(/QC\d{5}-R\d{2}/i);
-      if (m) return m[0].toUpperCase();
-      const keys = Object.keys(FOLDER_QC_MAP);
-      for (let i = 0; i < keys.length; i++) {
-        if (dirname.indexOf(keys[i]) >= 0) return FOLDER_QC_MAP[keys[i]];
-      }
-      return null;
-    };
-    
-    const determineQCFromSheet = (json, initialQC) => {
-      if (initialQC === 'QC10006-R01') return 'QC10006-R01';
-      if (initialQC === 'QC10004-R02') return 'QC10004-R02';
-      
-      const scanLimit = Math.min(15, json.length);
-      for (let ri = 0; ri < scanLimit; ri++) {
-        const row = json[ri];
-        if (!row) continue;
-        
-        const colA = String(row[0] || '').trim();
-        if (colA) {
-          if (colA.indexOf('QC10002-R02') >= 0) return 'QC10002-R02';
-          if (colA.indexOf('QC10006-R01') >= 0) return 'QC10006-R01';
-          if (colA.indexOf('QC10006-R02') >= 0) return 'QC10006-R02';
-          if (colA.indexOf('QC10007-R03') >= 0) return 'QC10007-R03';
-          if (colA.indexOf('QC10007-R01') >= 0 || colA.indexOf('QC10007-R02') >= 0) return 'QC10007-R01';
-          if (colA.indexOf('QC10008') >= 0) return 'QC10008-R02';
-          
-          if (ri === 0) {
-            const titleKeys = Object.keys(FORM_TITLE_MAP);
-            for (let k = 0; k < titleKeys.length; k++) {
-              if (colA.indexOf(titleKeys[k]) >= 0) return FORM_TITLE_MAP[titleKeys[k]];
-            }
-          }
-        }
-        
-        for (let ci = 1; ci < row.length && ci < 8; ci++) {
-          const val = String(row[ci] || '').trim();
-          if (!val) continue;
-          if (val.indexOf('QC10002-R02') >= 0) return 'QC10002-R02';
-          if (val.indexOf('QC10006-R01') >= 0) return 'QC10006-R01';
-          if (val.indexOf('QC10006-R02') >= 0) return 'QC10006-R02';
-          if (val.indexOf('QC10007-R03') >= 0) return 'QC10007-R03';
-          if (val.indexOf('QC10007-R01') >= 0 || val.indexOf('QC10007-R02') >= 0) return 'QC10007-R01';
-          if (val.indexOf('QC10008') >= 0) return 'QC10008-R02';
-          
-          if (ri === 0 || ri === 1 || ri === 2) {
-            const titleKeys = Object.keys(FORM_TITLE_MAP);
-            for (let k = 0; k < titleKeys.length; k++) {
-              if (val.indexOf(titleKeys[k]) >= 0) return FORM_TITLE_MAP[titleKeys[k]];
-            }
-          }
-        }
-      }
-      
-      const footerStart = Math.max(0, json.length - 30);
-      for (let ri = footerStart; ri < json.length; ri++) {
-        const row = json[ri];
-        if (!row) continue;
-        const colA = String(row[0] || '').trim();
-        if (colA) {
-          if (colA.indexOf('QC10002-R02') >= 0) return 'QC10002-R02';
-          if (colA.indexOf('QC10006-R01') >= 0) return 'QC10006-R01';
-          if (colA.indexOf('QC10006-R02') >= 0) return 'QC10006-R02';
-          if (colA.indexOf('QC10007-R03') >= 0) return 'QC10007-R03';
-          if (colA.indexOf('QC10007-R01') >= 0 || colA.indexOf('QC10007-R02') >= 0) return 'QC10007-R01';
-          if (colA.indexOf('QC10008') >= 0) return 'QC10008-R02';
-        }
-        for (let ci = 1; ci < row.length && ci < 8; ci++) {
-          const val = String(row[ci] || '').trim();
-          if (!val) continue;
-          if (val.indexOf('QC10002-R02') >= 0) return 'QC10002-R02';
-          if (val.indexOf('QC10006-R01') >= 0) return 'QC10006-R01';
-          if (val.indexOf('QC10006-R02') >= 0) return 'QC10006-R02';
-          if (val.indexOf('QC10007-R03') >= 0) return 'QC10007-R03';
-          if (val.indexOf('QC10007-R01') >= 0 || val.indexOf('QC10007-R02') >= 0) return 'QC10007-R01';
-          if (val.indexOf('QC10008') >= 0) return 'QC10008-R02';
-        }
-      }
-      return initialQC;
-    };
-    
-    // 使用 Promise.all 等待所有檔案讀取完成
-    await Promise.all(files.map(file => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const workbook = XLSX.read(e.target.result, { type: 'binary' });
-            
-            // 從檔案路徑推斷初始 QC
-            const dataPath = file.webkitRelativePath || file.name;
-            const pathParts = dataPath.split(/[\\/]/);
-            let initialQC = null;
-            for (let i = 0; i < pathParts.length; i++) {
-              const qc = detectQCFromFolder(pathParts[i]);
-              if (qc) { initialQC = qc; break; }
-            }
-            if (!initialQC) initialQC = 'Unknown';
-            
-            // 對每個工作表處理
-            workbook.SheetNames.forEach(sheetName => {
-              if (sheetName === 'DATE' || sheetName === '空白' || sheetName === '範例' || sheetName === '客戶別') return;
-              if (sheetName.indexOf('Sheet') >= 0) return;
-              if (/^QC[-_]?\d+/i.test(sheetName.trim())) return;
-              
-              const sheet = workbook.Sheets[sheetName];
-              if (!sheet || !sheet['!ref']) return;
-              
-              const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-              const qcLabel = determineQCFromSheet(json, initialQC);
-              
-              // 從第 1 行（row index 0）提取欄位標題（只取前 10 個欄位）
-              const range = XLSX.utils.decode_range(sheet['!ref']);
-              const maxCol = Math.min(range.e.c, 10);
-              
-              for (let col = range.s.c + 1; col <= maxCol; col++) {
-                const cellAddr = XLSX.utils.encode_cell({ r: 0, c: col });
-                const cell = sheet[cellAddr];
-                
-                if (cell && cell.v !== undefined && cell.v !== null && String(cell.v).trim() !== '') {
-                  const fieldName = String(cell.v).trim();
-                  
-                  mappings.push({
-                    qcLabel: qcLabel,
-                    fieldName: fieldName,
-                    dataPath: dataPath
-                  });
-                }
-              }
-            });
-          } catch (error) {
-            console.error('讀取檔案失敗:', error);
-          }
-          resolve();
-        };
-        reader.readAsBinaryString(file);
-      });
-    }));
-
-    if (mappings.length === 0) {
-      alert('未找到任何欄位數據');
-      return;
-    }
-
-    // 生成 CSV
-    const header = '品管標籤編號,欄位名稱,資料路徑';
-    const rows = mappings.map(m => {
-      const qcLabel = `"${m.qcLabel}"`;
-      const fieldName = `"${m.fieldName}"`;
-      const dataPath = `"${m.dataPath}"`;
-      return `${qcLabel},${fieldName},${dataPath}`;
-    });
-    
-    const csvContent = [header, ...rows].join('\n');
-    
-    // 下載檔案
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `field_mapping_${new Date().toISOString().slice(0, 10)}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    alert(`已成功匯出 ${mappings.length} 筆欄位映射數據`);
-  };
-
-  /**
    * 匯出提取結果為 CSV 檔案
    */
   const exportToCSV = (data, name = "提取結果") => {
@@ -879,9 +658,14 @@ function App() {
   // ==========================================
   const handleLoadSummaryFile = async (file) => {
     try {
-      const data = await parseSummaryExcel(file);
-      const yearMatch = file.name.match(/(20\d{2})/);
-      const year = yearMatch ? yearMatch[1] : "未知年度";
+      const isJSON = file.name.endsWith('.json');
+      const data = isJSON ? await parseSummaryJSON(file) : await parseSummaryExcel(file);
+      const yearMatch = isJSON
+        ? (data._meta?.year ? String(data._meta.year) : null)
+        : file.name.match(/(20\d{2})/);
+      const year = yearMatch || "未知年度";
+      // Strip internal meta key before storing
+      if (data._meta) delete data._meta;
       setSummaryFiles(prev => {
         const next = { ...prev, [year]: data };
         const sheets = Object.keys(data);
@@ -893,7 +677,7 @@ function App() {
       setSummaryFileName(file.name);
     } catch (err) {
       console.error(err);
-      alert("解析品檢彙總 Excel 失敗，請確保上傳的是正確的報表統計檔。");
+      alert(`解析品檢彙總 ${file.name.endsWith('.json') ? 'JSON' : 'Excel'} 失敗，請確保上傳的是正確的報表統計檔。`);
     }
   };
 
@@ -1364,7 +1148,7 @@ function App() {
             <div className="mck-card-header mck-card-header--compact">
               <div>
                 <h2 className="mck-card-title">匯入年度報表統計檔</h2>
-                <div className="mck-card-subtitle">請上傳由 ETL Pipeline 產出的品檢報表統計 .xlsx 檔案</div>
+                <div className="mck-card-subtitle">請上傳由 ETL Pipeline 產出的品檢報表統計檔案 (.xlsx / .json)</div>
               </div>
               {Object.keys(summaryFiles).length > 0 && (
                 <div className="mck-status-success">
@@ -1376,20 +1160,21 @@ function App() {
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input 
                 type="file" 
-                accept=".xlsx" 
+                accept=".xlsx,.json" 
                 onChange={handleSummaryFileChange} 
                 id="summary-file-input" 
                 multiple
                 style={{ display: 'none' }}
               />
-              <label 
-                htmlFor="summary-file-input" 
+              <button 
+                type="button"
                 className="btn btn-primary"
                 style={{ minHeight: '40px', padding: '8px 16px', fontSize: '13px' }}
                 aria-label="選擇報表檔案"
+                onClick={() => document.getElementById('summary-file-input')?.click()}
               >
-                📁 選擇報表檔案...
-              </label>
+                📁 選擇報表檔案 (xlsx/json)
+              </button>
               {Object.keys(summaryFiles).length > 0 && (
                 <button 
                   className="btn btn-danger"
@@ -1407,9 +1192,9 @@ function App() {
                   🗑 清空所有報表
                 </button>
               )}
-              <span className="mck-text-slate">
-                直接在下方選取或拖曳包含 QC 報表的資料夾即可開始分析。
-              </span>
+                <span className="mck-text-slate">
+                 支援 ETL Pipeline 產出的 .xlsx 報表統計檔 或 .json 結構化資料檔
+                </span>
             </div>
           </div>
 
@@ -1812,18 +1597,27 @@ function App() {
                           </select>
                         </div>
 
-                        <button 
-                          className="btn btn-primary"
-                          onClick={() => handleRunBrowserETL(etlYear)}
-                          disabled={isScanning}
-                          style={{ opacity: isScanning ? 0.6 : 1, cursor: isScanning ? 'not-allowed' : 'pointer' }}
-                        >
-                          {isScanning ? '🔍 正在解析原始檔案中...' : `📊 輸出 ${etlYear} 品檢報表統計`}
-                        </button>
-                        
-                        <button 
-                          className="btn btn-secondary"
-                          onClick={() => handleExportIndividualReports(etlYear)}
+                         <button 
+                           className="btn btn-primary"
+                           onClick={() => handleRunBrowserETL(etlYear)}
+                           disabled={isScanning}
+                           style={{ opacity: isScanning ? 0.6 : 1, cursor: isScanning ? 'not-allowed' : 'pointer' }}
+                         >
+                           {isScanning ? '🔍 正在解析原始檔案中...' : `📊 輸出 ${etlYear} 品檢報表統計 (JSON)`}
+                         </button>
+
+                         <button 
+                           className="btn btn-secondary"
+                           onClick={() => handleExportExcel(etlYear)}
+                           disabled={isScanning || !cachedCounts}
+                           style={{ opacity: (isScanning || !cachedCounts) ? 0.6 : 1, cursor: (isScanning || !cachedCounts) ? 'not-allowed' : 'pointer' }}
+                         >
+                           📥 下載 Excel 報表
+                         </button>
+                         
+                         <button 
+                           className="btn btn-secondary"
+                           onClick={() => handleExportIndividualReports(etlYear)}
                           disabled={isScanning}
                           style={{ opacity: isScanning ? 0.6 : 1, cursor: isScanning ? 'not-allowed' : 'pointer' }}
                         >
