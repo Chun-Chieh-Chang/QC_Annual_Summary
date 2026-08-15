@@ -38,6 +38,7 @@ dist-ssr
 .opencode/
 .qoder/
 .trae/
+.playwright-mcp/
 
 # Generated Excel output files
 DataExtract/

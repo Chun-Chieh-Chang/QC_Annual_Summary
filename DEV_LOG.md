@@ -1,4 +1,4 @@
-﻿# 開發日誌 (DEV_LOG.md)
+# 開發日誌 (DEV_LOG.md)
 
 ## 2026-07-09 (後續追蹤) A51深水區掃描封印解除與冗餘清理
 
@@ -1233,6 +1233,40 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 - [x] 更新開發日誌 (DEV_LOG.md)
 - [x] 修改 `browserETL.js` 中的 `parseDateFromString` 與 `findDateInSheetFallback` 支援民國年與點分隔符
 - [x] 在 `findDateInSheet` 中為 `QC10007-R03` 新增 `N4` 單元格回退機制
+
+---
+
+## 2026-08-15 醫療器材風格介面重構、三段式工作流程布局與大模型 (LLM) 數據一鍵匯出
+
+### 需求說明
+1. **去除 AI 裝飾感並重新布局頁面操作**：
+   - 捨棄雜亂 Emoji 與樣板標籤，改採「高階醫材 QMS 工作台風格 (Industrial MedTech Workbench)」。
+   - 按品保工程師實際操作步驟重組為三段式導航（階段 01：原始表單掃描與批次校驗 ➔ 階段 02：QMS ETL 清洗與法規報表產出 ➔ 階段 03：跨年度品質趨勢與大模型診斷）。
+2. **新增一鍵匯出大模型 (LLM) 分析指令與結構化數據集功能**：
+   - 彙整載入之所有年份品檢數據（7 大類 QC 階段、12 個月份分佈、細項組件與 Setup/巡檢頻次）。
+   - 格式化為具備 ISO 13485 / GMP 主任品質稽核員人設的專屬 Markdown 診斷指令與完整 JSON 數據包，支援彈窗預覽、一鍵複製與下載 `.md` / `.json`。
+
+### 原因分析 (RCA) 與設計考量
+- 舊版介面採用雙頁籤設計，ETL 提取工具與 McKinsey 圖表分析割裂，使用者在提取完成後需要手動重新上傳 JSON/Excel 才能觀看圖表，缺乏平滑流暢的一體化體驗。
+- 舊版介面充斥各類 Emoji 與樣板文字，缺乏醫療器材法規等級的嚴謹度與高資訊密度視覺層次。
+
+### 矯正與預防措施 (CAPA)
+1. **三段式工作台架構 (MedTech 3-Stage Pipeline)**：
+   - Stage 01: 原始 Excel 報表拖曳掃描、表單編碼符合性、同檔後綴去重、Date Code 格式驗證、異常偏差一鍵過濾與 CSV 清單匯出。
+   - Stage 02: 雙引擎 ETL 運算、年度選擇、JSON / Excel / 7 大類獨立分冊輸出，並提供「立即同步至階段 03 儀表板」一鍵直達按鈕。
+   - Stage 03: 跨年度數據對比、品項自選堆疊柱狀圖、月份下拉篩選、數位 LED KPI 儀表板與大模型匯出引擎。
+2. **專屬大模型匯出模組 (`src/utils/llmExport.js`)**：
+   - 整合所有載入年份數據，生成涵蓋 YoY 趨勢、月度波動、Setup vs 巡檢比例、關鍵組件 Pareto 風險分析及 CAPA 改善行動建議的專業 Prompt。
+3. **醫療器材 QMS 工作台設計系統 (`src/index.css`)**：
+   - 採用深岩灰藍 (`#0B132B` / `#0F172A`) 結合無塵潔淨白 (`#FFFFFF`) 與醫療鈷藍 (`#0284C7`)，搭配微型 LED 狀態指示燈與 ISO 13485 確效標記。
+
+### 進度追蹤
+- [x] 新增 `src/utils/llmExport.js` 模組，支援跨年度數據萃取與專業醫材 QMS LLM Prompt 產生
+- [x] 重構 `src/App.jsx` 為 3-Stage 工作台流動布局，並消除 React 19 / ESLint 警示
+- [x] 更新 `src/index.css` 導入高階醫材 QMS 儀器工作台設計規範
+- [x] 執行軟體確效腳本 `scratch/validate_qc_etl.cjs` 全數通過
+- [x] 執行 Vite 打包編譯確認零錯誤
+
 
 
 

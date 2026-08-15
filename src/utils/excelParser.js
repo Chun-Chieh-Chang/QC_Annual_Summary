@@ -34,20 +34,20 @@ export const parseExcelFile = async (file, mappings, year = new Date().getFullYe
         const seenInjPatrolBaseNames = new Set();
         const seenExtPatrolBaseNames = new Set();
 
-        const isUUID = (str) => {
-          if (!str) return false;
-          const s = str.trim().toLowerCase();
-          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(s)) return true;
-          if (/^[0-9a-f]{32}$/.test(s)) return true;
-          if (s.length === 36 && /^[0-9a-f\-]+$/.test(s)) return true;
-          if (s.length >= 24 && /^[a-z0-9\-]+$/.test(s)) {
-            const hasDigit = /[0-9]/.test(s);
-            const hasAlpha = /[a-z]/.test(s);
-            const hasHyphen = /-/.test(s);
-            if ((hasDigit && hasAlpha) || hasHyphen) return true;
-          }
-          return false;
-        };
+          const isUUID = (str) => {
+            if (!str) return false;
+            const s = str.trim().toLowerCase();
+            if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(s)) return true;
+            if (/^[0-9a-f]{32}$/.test(s)) return true;
+            if (s.length === 36 && /^[0-9a-f-]+$/.test(s)) return true;
+            if (s.length >= 24 && /^[a-z0-9-]+$/.test(s)) {
+              const hasDigit = /[0-9]/.test(s);
+              const hasAlpha = /[a-z]/.test(s);
+              const hasHyphen = /-/.test(s);
+              if ((hasDigit && hasAlpha) || hasHyphen) return true;
+            }
+            return false;
+          };
         const filePath = file.webkitRelativePath || file.name;
         const normalizedPath = filePath.replace(/\\/g, '/').split('/').filter(p => !isUUID(p)).join('/');
         const pathLower = normalizedPath.toLowerCase();
@@ -83,7 +83,7 @@ export const parseExcelFile = async (file, mappings, year = new Date().getFullYe
           }
           
           // Calculate ETL Inclusion status
-          let etlStatus = "未納入";
+          let etlStatus;
           let etlReason = "";
           const etlTimestamp = new Date().toLocaleString('zh-TW', { hour12: false });
           
@@ -234,15 +234,14 @@ export const parseExcelFile = async (file, mappings, year = new Date().getFullYe
               } else {
                 etlStatus = "已納入";
                 const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                let actualQC = determineQCFromSheet(json, initialQC, relPath);
-                let subCat = null;
+                let actualQC = determineQCFromSheet(json, initialQC);
+                let subCat;
                 let month = null;
 
                 // Overrides and custom logic
                 const isSemiFinishedTable = /半成品品檢表/i.test(fileName) || /半成品品檢表/i.test(relPath || '');
                 if (isSemiFinishedTable) {
                   actualQC = 'QC10006-R02';
-                  subCat = '裝配C';
                   const sheetMatch = normalizedSheetName.match(/(\d{2})([A-L])/i);
                   if (sheetMatch) {
                     const yr = parseInt(sheetMatch[1], 10);
@@ -399,7 +398,7 @@ export const exportToExcel = (data, folderName = "品管報表統計") => {
   
   // Safe sheet name (length <= 31, no invalid chars)
   let safeName = folderName
-    .replace(/[:\\/?*\[\]]/g, "_")
+    .replace(/[:\\/?*[\]]/g, "_")
     .substring(0, 31);
   if (!safeName) safeName = "Sheet1";
   

@@ -14,12 +14,12 @@ export const isUUID = (str) => {
   if (/^[0-9a-f]{32}$/.test(s)) return true;
   
   // 3. Looser GUID pattern: Any 36-char string consisting of only hex, digits and hyphens
-  if (s.length === 36 && /^[0-9a-f\-]+$/.test(s)) return true;
+  if (s.length === 36 && /^[0-9a-f-]+$/.test(s)) return true;
   
   // 4. General browser/system generated random directory format (typically fffffff-ffff...)
   // Check if it matches a string of letters, numbers, and hyphens with length >= 24, 
   // and doesn't contain any Chinese characters or common business keywords.
-  if (s.length >= 24 && /^[a-z0-9\-]+$/.test(s)) {
+  if (s.length >= 24 && /^[a-z0-9-]+$/.test(s)) {
     const hasDigit = /[0-9]/.test(s);
     const hasAlpha = /[a-z]/.test(s);
     const hasHyphen = /-/.test(s);
@@ -238,7 +238,7 @@ export function findDateInSheetFallback(json) {
   return null;
 }
 
-export function determineQCFromSheet(json, initialQC, relPath) {
+export function determineQCFromSheet(json, initialQC) {
   if (initialQC === 'QC10006-R01') return 'QC10006-R01';
   if (initialQC === 'QC10004-R02') return 'QC10004-R02';
 
@@ -297,7 +297,7 @@ export function determineQCFromSheet(json, initialQC, relPath) {
   return initialQC;
 }
 
-export function getRawSubCategory(qc, relPath, fileName, sheetName, qcFolder) {
+export function getRawSubCategory(qc, relPath, fileName) {
   if (qc === 'QC10004-R02') return null; // Processed separately
   if (qc === 'QC10006-R01') return '裝配巡檢'; // Always a single aggregated column
 
@@ -363,7 +363,7 @@ export function extractRawMonth(ws, fileName, sheetName, year, relPath, json, ac
       if (mn >= 1 && mn <= 12) return mn;
     }
   }
-  n = fileName.match(/(\d{4})(\d{2})\d{2}(?=[^\/\\]*\.xlsx)/i);
+  n = fileName.match(/(\d{4})(\d{2})\d{2}(?=[^/\\]*\.xlsx)/i);
   if (n) {
     const yr = parseInt(n[1], 10);
     if (yr === year || yr === parseInt(y, 10)) {
@@ -371,7 +371,7 @@ export function extractRawMonth(ws, fileName, sheetName, year, relPath, json, ac
       if (mn >= 1 && mn <= 12) return mn;
     }
   }
-  n = fileName.match(/(\d{2})(\d{2})\d{2}(?=[^\/\\]*\.xlsx)/);
+  n = fileName.match(/(\d{2})(\d{2})\d{2}(?=[^/\\]*\.xlsx)/);
   if (n) {
     mn = parseInt(n[2], 10);
     if (mn >= 1 && mn <= 12) return mn;
@@ -884,8 +884,6 @@ const QC_META = {
 
 export const exportSummaryJSONInBrowser = (counts, year) => {
   const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-  const monthArray = (data) => MONTHS.map(m => (data && data[m]) || 0);
-  const totalArray = (data) => monthArray(data).reduce((a, b) => a + b, 0);
 
   const categories = [];
   let grandTotal = 0;
@@ -899,7 +897,6 @@ export const exportSummaryJSONInBrowser = (counts, year) => {
 
     const meta = QC_META[qcCode] || {};
     const subCategories = [];
-    let categoryGrandTotal = 0;
     const monthlyTotals = {};
     MONTHS.forEach(m => { monthlyTotals[m] = 0; });
 
@@ -924,7 +921,6 @@ export const exportSummaryJSONInBrowser = (counts, year) => {
         subTotal += val;
         monthlyTotals[m] += val;
       });
-      categoryGrandTotal += subTotal;
 
       subCategories.push({
         name: key,
