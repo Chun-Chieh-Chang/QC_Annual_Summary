@@ -1161,8 +1161,8 @@ function App() {
               }}
             >
               <Icons.Folder />
-              <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>選取或拖曳醫療器材品檢原始資料夾</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>支援批次讀取多層子目錄及射出、押出、裝配、完成品等各類 QC 原始檔案</div>
+              <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>選取或拖曳醫療器材品檢原始資料夾</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>支援批次讀取多層子目錄及射出、押出、裝配、完成品等各類 QC 原始檔案</div>
               <button 
                 type="button" 
                 className="btn btn-primary btn-sm" 
@@ -1197,7 +1197,7 @@ function App() {
 
           {isScanning && (
             <div style={{ padding: '36px 0', textAlign: 'center' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--med-cobalt)', marginBottom: '8px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--med-cobalt)', marginBottom: '8px' }}>
                 正在掃描校驗原始 Excel 表單... {scanProgress ? `(${scanProgress.current}/${scanProgress.total})` : ''}
               </div>
               {scanProgress && (
@@ -1212,7 +1212,7 @@ function App() {
             <div className="alert-banner alert-error" style={{ marginTop: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Icons.AlertTriangle />
-                <span style={{ fontWeight: 600, fontSize: '12px' }}>
+                <span style={{ fontWeight: 600, fontSize: '13px' }}>
                   偏差警示：偵測到有部分工作表在確效中被判定為「狀態異常」，請點擊右側按鈕立即過濾排查。
                 </span>
               </div>
@@ -1272,7 +1272,7 @@ function App() {
                   )}
                 </div>
 
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
                   RECORDS: <strong>{filteredRows.length}</strong> / TOTAL: <strong>{scannedRows.length}</strong>
                 </div>
               </div>
@@ -1316,10 +1316,10 @@ function App() {
                           {row.etlStatus === '未納入' && <span className="status-badge status-none">未納入</span>}
                           {row.etlStatus === '狀態異常' && <span className="status-badge status-error">狀態異常</span>}
                         </td>
-                        <td style={{ fontSize: '11px', color: row.etlStatus === '狀態異常' ? 'var(--med-alert-text)' : 'var(--text-secondary)' }}>
+                        <td style={{ fontSize: '13px', color: row.etlStatus === '狀態異常' ? 'var(--med-alert-text)' : 'var(--text-secondary)' }}>
                           {row.etlReason || '-'}
                         </td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>{row.etlTimestamp || 'N/A'}</td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>{row.etlTimestamp || 'N/A'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1354,7 +1354,7 @@ function App() {
               <p className="panel-subtitle">嚴格遵循 ISO 13485 品質追溯規範，進行多維度月份自動歸併、同檔後綴去重與防呆過濾</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>確效年度：</span>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>確效年度：</span>
               <select 
                 className="filter-select"
                 value={etlYear}
@@ -1372,10 +1372,10 @@ function App() {
 
           {isProcessingETL && (
             <div className="panel-card" style={{ background: 'var(--bg-surface-subtle)', marginBottom: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--med-cobalt)', marginBottom: '4px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--med-cobalt)', marginBottom: '4px' }}>
                 正在執行 {etlYear} 年度 QMS ETL 運算... ({etlProgress?.current}/{etlProgress?.total})
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>
                 FILE: {etlProgress?.filename}
               </div>
               <div style={{ width: '100%', height: '6px', background: '#E2E8F0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
@@ -1520,7 +1520,7 @@ function App() {
 
                 {Object.keys(summaryFiles).length > 0 && (
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: '6px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>年度切換：</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>年度切換：</span>
                     {Object.keys(summaryFiles).sort().map(year => (
                       <button 
                         key={year}
@@ -1542,7 +1542,7 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>月份篩選：</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>月份篩選：</span>
                 <select 
                   className="filter-select"
                   value={selectedMonth}
@@ -1558,7 +1558,7 @@ function App() {
 
             {activeYear === 'compare' && (
               <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>COMPARE YEARS:</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>COMPARE YEARS:</span>
                 {Object.keys(summaryFiles).sort().map(year => {
                   const isSelected = compareYearSelection[year];
                   return (
@@ -1584,7 +1584,7 @@ function App() {
             <div className="dashboard-layout">
               {/* Left QC Sheet Selector */}
               <aside className="sheet-sidebar">
-                <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', padding: '4px 6px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', padding: '4px 6px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                   QMS STAGES
                 </div>
                 {Object.keys(summaryData).map((sheetName) => (
@@ -1624,8 +1624,8 @@ function App() {
                 <div className="panel-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>自訂品檢項目分析篩選</h3>
-                      <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>勾選細項組件以動態生成製程堆疊分析柱狀圖</p>
+                      <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>自訂品檢項目分析篩選</h3>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>勾選細項組件以動態生成製程堆疊分析柱狀圖</p>
                     </div>
                     {availableItems.length > 0 && (
                       <div style={{ display: 'flex', gap: '6px' }}>
@@ -1647,7 +1647,7 @@ function App() {
 
                   <div className="pills-container">
                     {availableItems.length === 0 ? (
-                      <p style={{ color: 'var(--text-muted)', fontSize: '11px' }}>無可選項目</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>無可選項目</p>
                     ) : (
                       availableItems.map((item) => {
                         const active = effectiveSelectedItems.some(i => i.idx === item.idx);
@@ -1686,8 +1686,8 @@ function App() {
           ) : (
             <div className="panel-card" style={{ padding: '70px 0', textAlign: 'center' }}>
               <Icons.Chart />
-              <h3 style={{ fontSize: '15px', fontWeight: 700, marginTop: '10px' }}>尚未載入任何 QMS 統計數據</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, marginTop: '10px' }}>尚未載入任何 QMS 統計數據</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
                 請點擊上方「匯入統計檔」載入現有報表，或由「階段 02」一鍵同步 ETL 結果。
               </p>
             </div>
@@ -1710,7 +1710,7 @@ function App() {
             </div>
 
             <div className="modal-body">
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
                 此數據包已自動整合系統中載入的所有年份品保數據，依據<strong>ISO 13485 醫療器材主任品質稽核員 (Lead Quality Auditor)</strong>規範格式化為 Markdown 統計表與機器可讀 JSON 數據包，可直接複製餵給 ChatGPT, Claude, Gemini, DeepSeek 執行專業品質深度審查與 CAPA 建議。
               </div>
 
@@ -1770,7 +1770,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', overflowY: 'auto' }}>
                 {Object.keys(mappings).map((code) => (
                   <div key={code} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ width: '120px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '12px', color: 'var(--med-cobalt)' }}>{code}</span>
+                    <span style={{ width: '120px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '13px', color: 'var(--med-cobalt)' }}>{code}</span>
                     <input 
                       type="text" 
                       className="search-input" 
@@ -1831,7 +1831,7 @@ function App() {
         borderTop: '1px solid var(--border-precision)',
         textAlign: 'center',
         color: 'var(--text-muted)',
-        fontSize: '11px',
+        fontSize: '13px',
         fontFamily: 'var(--font-mono)'
       }}>
         MOULDEX MEDICAL DEVICE QUALITY MANAGEMENT SYSTEM · ISO 13485 & GMP COMPLIANT · v2026.08

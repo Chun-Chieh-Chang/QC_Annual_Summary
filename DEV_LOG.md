@@ -1,5 +1,71 @@
 # 開發日誌 (DEV_LOG.md)
 
+## 2026-08-15 專案整體程式碼與檔案全流程優化作業 (Project Refactor & Optimization)
+
+### 需求說明
+1. 依據 `project-refactor-cleanup` SOP 執行全專案 5 大階段之程式碼盤點、死碼清理、文件同步與架構整合。
+2. 確效 ESLint 代碼規範，消除無效依賴與潛在警告。
+3. 確保專案說明文件 (`README.md`) 與最新 3 階段工作流、字級階梯規範 100% 同步。
+
+### 遇到的問題與根因分析 (RCA)
+- **問題一：ESLint 檢查擴展至非專案核心工具目錄**
+  - *原因*：`eslint.config.js` 的 `globalIgnores` 僅排除了 `dist/`，導致 `npm run lint` 掃描到 `.opencode` 等 IDE 插件的暫存腳本，產生未定義變數之錯誤報警。
+- **問題二：專案 README 目錄結構與當前架構脫節**
+  - *原因*：新增之 `llmExport.js`、`eslint.config.js` 與 `deploy.yml` 部署工作流未在 `README.md` 的目錄結構與功能清單中反映。
+
+### 矯正與預防措施 (CAPA)
+1. **ESLint 規範收斂**：在 `eslint.config.js` 加入 `['dist', 'scratch/**', '.*/**']` 全域忽略模式，並將檔案比對嚴格限定於 `src/**/*.{js,jsx}` 與根目錄配置檔。執行 `npm run lint` 確認 0 錯誤、0 警告。
+2. **文檔全面同步**：
+   - 修正 `README.md`，更新為「3 階段 MedTech 精密工作流程」，並補齊目錄樹結構中的 `llmExport.js` 與 GitHub Actions 部署描述。
+   - 記錄最小 13px 排版規範與高精度儀表板特色。
+3. **架構確效與構建測試**：
+   - 執行 `npm run build` 確認 21 個模組以 0 錯誤順利產出至 `dist/`。
+   - 進行資料隱私審查，確認 `.gitignore` 完整防護所有敏感測試檔案。
+
+### 進度追蹤
+- [x] 階段一：全面盤點與 ESLint 清理作業 (0 errors, 0 warnings)。
+- [x] 階段二：同步更新 `README.md` 與 `DEV_LOG.md`。
+- [x] 階段三：MECE 原則架構整合與資安/隱私審查。
+- [x] 階段四：本地沙盒構建測試 (`npm run build`) 通過。
+- [x] 階段五：準備提交基準點並尋求 Push 許可。
+
+---
+
+## 2026-08-15 全系統字體階梯規範修訂與最小字體 (13px) 確效優化
+
+### 需求說明
+1. 依據使用者指示：「最小字體不得小於13px，其他字體大小需對應修訂，以符合專業審美的比例與清晰可見為原則。」
+2. 全面盤點全專案所有 CSS 樣式檔 (`src/index.css`) 與 JSX 行內樣式 (`src/App.jsx`)，建立階梯式字級層次體系（High-Precision MedTech Type Scale）。
+
+### 遇到的問題與根因分析 (RCA)
+- **問題現象**：先前介面中存在多處小於 13px 之微型字體（如 9px 的篩選器按鈕、10px 的 QMS STAGES 標籤、11px 的徽章與表格副資訊、12px 的說明文字）。
+- **根本原因**：早期為了追求極高資訊密度，部分輔助標籤、表格單元格和時間戳使用了過小的字級，導致高解析螢幕或長輩檢視時辨識度不佳，且字級階層較為碎片化。
+
+### 矯正與預防措施 (CAPA)
+- **字級階梯重構 (Type Scale Hierarchy)**：
+  1. **最小字級約束 (Min Level - 13px)**：將全系統所有 9px、10px、11px、12px 之字級（Badge、Tag、輔助說明、時間戳、欄位篩選鈕、表格儲存格、KPI標籤、LLM指令預覽）全面提升至 **13px**，徹底杜絕任何小於 13px 的字體。
+  2. **基底與控制項提升 (Body & Controls - 14px ~ 15px)**：
+     - `body` 基底字級提升至 **15px**。
+     - 按鈕 (`.btn`)、輸入框 (`.search-input`)、下拉選單 (`.filter-select`) 提升至 **14px**。
+  3. **卡片與區塊標題 (Card & Section Titles - 15px ~ 17px)**：
+     - 步驟標題 (`.step-title`) 提升至 **15px**。
+     - ETL 卡片標題 (`.etl-card-title`) 提升至 **16px**。
+     - 面板標題 (`.panel-title`) 與 Modal 標題 (`.modal-title`) 提升至 **17px**。
+  4. **主標題與儀表板關鍵指標 (Hero Title & Digital KPI - 22px ~ 26px)**：
+     - 應用程式主標題 (`.app-main-title`) 提升至 **22px**。
+     - KPI 數位量表數值 (`.kpi-val`) 提升至 **26px**。
+- **建置確效與防迴歸**：
+  - 執行 `npm run build` 確認 21 個模組編譯皆為 0 錯誤。
+  - 使用正則表示式全局掃描 `src/` 目錄，確保零小於 13px 的遺漏。
+
+### 進度追蹤
+- [x] 重構 `src/index.css` 全域與元件字級。
+- [x] 重構 `src/App.jsx` 所有行內 `fontSize`。
+- [x] 本地建置驗證通過 (`npm run build`)。
+- [x] 更新 `DEV_LOG.md`。
+
+---
+
 ## 2026-07-09 (後續追蹤) A51深水區掃描封印解除與冗餘清理
 
 ### 需求說明

@@ -16,13 +16,13 @@
 - **民國年日期支援**：自動解析民國年格式（如 `112/03/15` → 2023 年 3 月）及點號分隔（如 `112.03.15`），涵蓋 `parseDateFromString` 與 `findDateInSheetFallback`。
 - **半成品品檢雙重驗證**：要求工作表 QC 編碼為 `QC10006-R02` **且** 檔名/路徑含 `半成品品檢表`，避免誤判。
 - **空白樣板守衛**：自動識別並跳過批號（儲存格 `G4`）為空的空白樣板檔案，防禦幻象數據（特定射出類別豁免）。
-- **McKinsey 互動儀表板**：React 應用，使用者可任意勾選品項、以月份為 X 軸生成堆疊柱狀圖，支援跨年度對比模式與月份篩選。
-- **品檢對照提取與過濾**：瀏覽器端 ETL 列出每個工作表是否已被納入 ETL 統計之「原因說明」，並配備獨立下拉篩選器。
+- **McKinsey 互動儀表板與 LLM 導出**：React 應用，使用者可任意勾選品項、以月份為 X 軸生成堆疊柱狀圖，支援跨年度對比模式與月份篩選；並提供一鍵導出 ISO 13485 醫療器材大模型 (LLM) 診斷 Prompt。
+- **品檢對照提取與過濾**：瀏覽器端 ETL 列出每個工作表是否已被納入 ETL 統計之「原因說明」，並配備如同 Excel 的獨立欄位篩選彈窗。
 - **獨立報表統計**：一次產出年度品檢報表統計 Excel 檔案。
 - **JSON 匯入儀表板**：支援將 ETL 匯出之 JSON 格式報表（`QC_Annual_Summary_v1`）直接載入 McKinsey 儀表板進行分析，無需重新掃描 Excel 檔案。
 - **ETL 結果快取**：初次轉換完成後自動快取結果資料，後續切換格式或輸出獨立報表時無需重新掃描，大幅提升重複輸出體驗。
-- **雙解析引擎**：內建新版（動態欄位）與舊版（靜態欄位）雙引擎，可於介面無縫切換比對。
 - **GitHub Pages 自動部署**：推送至 `main` 分支後，透過 GitHub Actions 自動構建並部署至 GitHub Pages。
+- **醫療級字級與排版規範**：全系統介面嚴格遵循「最小字體不得小於 13px」與 MedTech High-Precision 階梯式排版規範。
 
 ## 使用方式
 
@@ -33,21 +33,26 @@ npm install
 # 啟動互動式儀表板與瀏覽器端 ETL 管線（開發模式）
 npm run dev
 
+# 代碼品質與語法檢查
+npm run lint
+
 # 部署生產環境（輸出至 dist/）
 npm run build
 ```
 
-## 前端 ETL 執行流程
+## 前端 3 階段工作流程 (MedTech Workflow)
 
 ```
-用戶選取本地資料夾 / 多個 Excel 檔案
+[階段 01：品檢編碼對照與檔案篩選]
+  用戶選取或拖曳本地資料夾 / 多個 Excel 檔案 ➔ 即時解析 Column A 之 QC 編碼 ➔ 提供 Excel 等級多欄位篩選與異常排查
         │
-        ▼ 瀏覽器執行 runETLInBrowser() 
-        │  Step 1: 用戶端即時掃描並解析上傳之 Excel 工作表資料
-        │  Step 2: 自動套用各品檢表特有之「空白防禦」與「月份判定規則」
-        │  Step 3: 提供「是否納入ETL計算」狀態追蹤與原因說明，支援如同 Excel 的下拉過濾器
         ▼
-彙整 counts 狀態 → 點擊「匯出報表」下載 `${year}品檢報表統計.xlsx` 
+[階段 02：QMS ETL 數據清洗與法規報表產出]
+  自動進行月份判定、去重與防呆過濾 ➔ 下載年度品檢報表統計 (.xlsx) ➔ 一鍵同步至分析儀表板
+        │
+        ▼
+[階段 03：品質數據分析儀表板與 LLM 導出]
+  多維度堆疊柱狀圖分析 ➔ 跨年度趨勢比對 ➔ 一鍵生成 ISO 13485 醫療器材大模型 (LLM) 診斷 Prompt 與全年度數據包
 ```
 
 ## 目錄結構
@@ -59,21 +64,24 @@ npm run build
 │   ├── 狀態異常訊息.md           # ETL 狀態異常觸發條件說明
 │   └── handover_resume_guide.md  # 交接與重啟指南
 ├── src/                          # React SPA 互動儀表板與前端 ETL
-│   ├── App.jsx                   # 主介面（含快取與 UI 控制）
-│   ├── index.css                 # 全域樣式 (Outfit + Noto Sans TC)
+│   ├── App.jsx                   # 主介面（3 階段工作流控制、圖表與彈窗）
+│   ├── index.css                 # 全域樣式 (MedTech 配色 + 最小 13px 排版階梯)
 │   ├── main.jsx                  # React 入口
 │   └── utils/
-│       ├── browserETL.js         # ETL 核心（動態欄位 + 民國年）
-│       ├── db.js                 # QC 表單編號對照表 (localStorage)
-│       └── excelParser.js        # 瀏覽器端 Excel 檔案解析器
+│       ├── browserETL.js         # ETL 核心（動態欄位 + 民國年 + 去重過濾）
+│       ├── db.js                 # QC 表單編號對照表 (localStorage 管理)
+│       ├── excelParser.js        # 瀏覽器端高效 Excel 解析引擎
+│       └── llmExport.js          # ISO 13485 醫療器材大模型 Prompt 與數據包建構器
 ├── public/                       # 靜態資源
 ├── scratch/                      # 開發與確效測試腳本 (gitignored)
 │   └── validate_qc_etl.cjs       # QC ETL 數據映射規則自動確效工具
 ├── .github/workflows/            # GitHub Actions 自動部署配置
+│   └── deploy.yml                # 自動構建與 GitHub Pages 部署腳本
 ├── DEV_LOG.md                    # 開發日誌（含 RCA + CAPA 歷史記錄）
-├── package.json
-├── vite.config.js
-└── .gitignore
+├── eslint.config.js              # ESLint 規範設定
+├── package.json                  # 專案依賴與腳本
+├── vite.config.js                # Vite 配置檔
+└── .gitignore                    # Git 忽略規則
 ```
 
 ## 技術棧
