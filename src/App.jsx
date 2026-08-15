@@ -1044,10 +1044,10 @@ function App() {
         <div className="app-title-group">
           <div className="app-main-title">
             <Icons.Chart />
-            <span>Mouldex QMS · 醫療器材品保檢驗數據提取與跨年度確效系統</span>
+            <span>Mouldex QMS · 醫療器材品管檢驗數據提取與跨年度確效系統</span>
             <span className="medtech-badge-inline">ISO 13485 & GMP</span>
           </div>
-          <p className="app-subtitle">MEDICAL DEVICE QUALITY ASSURANCE WORKBENCH & MULTI-YEAR ETL ENGINE</p>
+          <p className="app-subtitle">MEDICAL DEVICE QUALITY CONTROL WORKBENCH & MULTI-YEAR ETL ENGINE</p>
         </div>
         <div className="header-actions">
           <div className="system-status-indicator">
@@ -1074,7 +1074,7 @@ function App() {
       </header>
 
       {/* 3-Stage Bench Instrument Stepper */}
-      <nav className="workflow-stepper" aria-label="醫療器材品保流程">
+      <nav className="workflow-stepper" aria-label="醫療器材品管流程">
         <button 
           className={`step-card ${activeStep === 'step1_scan' ? 'active' : ''} ${scannedRows.length > 0 ? 'completed' : ''}`}
           onClick={() => setActiveStep('step1_scan')}
@@ -1121,7 +1121,7 @@ function App() {
             <div>
               <h2 className="panel-title">
                 <Icons.Folder />
-                <span>階段 01：原始品保 Excel 表單掃描與批次校驗</span>
+                <span>階段 01：原始品管 Excel 表單掃描與批次校驗</span>
               </h2>
               <p className="panel-subtitle">批次讀取原始品管資料夾，自動檢驗 7 大類 QC 編碼、Date Code 格式及空白樣板防呆守衛</p>
             </div>
@@ -1711,7 +1711,7 @@ function App() {
 
             <div className="modal-body">
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                此數據包已自動整合系統中載入的所有年份品保數據，依據<strong>ISO 13485 醫療器材主任品質稽核員 (Lead Quality Auditor)</strong>規範格式化為 Markdown 統計表與機器可讀 JSON 數據包，可直接複製餵給 ChatGPT, Claude, Gemini, DeepSeek 執行專業品質深度審查與 CAPA 建議。
+                此數據包已自動整合系統中載入的所有年份品管數據，依據<strong>ISO 13485 醫療器材主任品質稽核員 (Lead Quality Auditor)</strong>規範格式化為 Markdown 統計表與機器可讀 JSON 數據包，可直接複製餵給 ChatGPT, Claude, Gemini, DeepSeek 執行專業品質深度審查與 CAPA 建議。
               </div>
 
               <div className="llm-preview-box">

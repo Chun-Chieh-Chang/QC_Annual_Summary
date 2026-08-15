@@ -1,7 +1,7 @@
 # 交接與重啟指南 (Handover Resume Guide)
 
 ## 當前專案狀態
-- **專案名稱**：FileName_WorkSheet_Extract (Mouldex QMS 醫療器材品保檢驗數據提取與跨年度確效系統)
+- **專案名稱**：FileName_WorkSheet_Extract (Mouldex QMS 醫療器材品管檢驗數據提取與跨年度確效系統)
 - **分支**：`main`
 - **部署環境**：GitHub Pages（透過 GitHub Actions 自動確效並部署）
 - **最新完成進度**：
@@ -13,7 +13,7 @@
 
 ## 核心架構摘要
 
-### 1. 三段式品保工作台 (3-Stage Industrial MedTech Workbench)
+### 1. 三段式品管工作台 (3-Stage Industrial MedTech Workbench)
 - **STAGE 01 (原始檢驗表單掃描與批次校驗)**：
   - 批次讀取多層目錄，自動檢驗 7 大類 QC 編碼、Date Code 格式及空白樣板防呆守衛。
   - 支援異常偏差一鍵排查、多欄位篩選彈窗與 CSV 檢驗清單匯出。

@@ -120,15 +120,15 @@ export function generateMultiYearLLMPrompt(summaryFiles) {
   let md = '';
 
   // 1. Medical Device QMS Expert Role & Task Header
-  md += `# 醫療器材品保檢驗數據跨年度綜合診斷報告指令 (Medical Device QMS Analytics Prompt)\n\n`;
+  md += `# 醫療器材品管檢驗數據跨年度綜合診斷報告指令 (Medical Device QMS Analytics Prompt)\n\n`;
   md += `> **體系依據**：ISO 13485 醫療器材品質管理系統 & GMP 醫療器材優良製造規範\n`;
-  md += `> **數據來源**：Mouldex 醫療器材品保檢驗自動化 ETL Pipeline\n`;
+  md += `> **數據來源**：Mouldex 醫療器材品管檢驗自動化 ETL Pipeline\n`;
   md += `> **涵蓋年度**：${years.join(', ')} 年（共 ${years.length} 個年度）\n`;
   md += `> **生成時間**：${generatedDate}\n\n`;
 
   md += `## 任務目標與分析指令 (Task Objectives & Lead Auditor Prompt)\n\n`;
   md += `你現在是一位具備 20 年以上高階醫療器材製造與法規品質經驗的**「ISO 13485 / FDA QSR 主任品質稽核員 (Lead Quality Auditor)」**與**「醫療器材精實品質架構師」**。\n`;
-  md += `請依據下方由品保系統產出的**跨年度醫療器材品檢統計數據**（包含 7 大製程品檢階段、12 個月份分佈、細項組件與 Setup/巡檢頻次），進行全方位的品質風險評估與管理審查報告。請重點輸出以下 5 大核心維度：\n\n`;
+  md += `請依據下方由品管系統產出的**跨年度醫療器材品檢統計數據**（包含 7 大製程品檢階段、12 個月份分佈、細項組件與 Setup/巡檢頻次），進行全方位的品質風險評估與管理審查報告。請重點輸出以下 5 大核心維度：\n\n`;
 
   md += `1. **跨年度檢驗負荷與品質趨勢 (Multi-Year Inspection & Capacity Trends)**：\n`;
   md += `   - 分析總檢驗批數/次數在各年度間的變化（YoY 成長或衰退率）。\n`;
