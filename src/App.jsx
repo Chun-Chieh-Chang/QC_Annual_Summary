@@ -49,6 +49,13 @@ const Icons = {
       <line x1="12" y1="15" x2="12" y2="3"></line>
     </svg>
   ),
+  Upload: () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="17 8 12 3 7 8"></polyline>
+      <line x1="12" y1="3" x2="12" y2="15"></line>
+    </svg>
+  ),
   Sparkles: () => (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
@@ -1765,11 +1772,11 @@ function App() {
             <div className="modal-body">
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
                 <button className="btn btn-secondary btn-sm" onClick={handleExportMappings}>
-                  <Icons.Download />
+                  <Icons.Upload />
                   <span>匯出 JSON</span>
                 </button>
                 <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
-                  <Icons.Folder />
+                  <Icons.Download />
                   <span>匯入 JSON</span>
                   <input type="file" accept=".json" onChange={handleImportMappings} style={{ display: 'none' }} />
                 </label>
