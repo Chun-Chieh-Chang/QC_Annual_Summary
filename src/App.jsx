@@ -1282,6 +1282,18 @@ function App() {
                   <div className="filter-backdrop" onClick={() => setActiveFilterPopover(null)} />
                 )}
                 <table className="data-table">
+                  <colgroup>
+                    <col style={{ width: '40px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col />
+                    <col />
+                    <col style={{ width: '120px' }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th style={{ width: '40px' }}>#</th>
@@ -1300,10 +1312,10 @@ function App() {
                     {filteredRows.map((row, idx) => (
                       <tr key={idx}>
                         <td style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{idx + 1}</td>
-                        <td style={{ fontWeight: 600 }}>{row.fileName}</td>
+                        <td className="filename-cell" style={{ fontWeight: 600 }} title={row.fileName}>{row.fileName}</td>
                         <td className="filepath-cell" title={row.filePath}>{row.filePath || '-'}</td>
                         <td style={{ fontFamily: 'var(--font-mono)' }}>{row.sheetName}</td>
-                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--med-cobalt)' }}>{row.foundCode}</td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--med-cobalt)', whiteSpace: 'nowrap' }}>{row.foundCode}</td>
                         <td>{row.foundName}</td>
                         <td>
                           {row.status === 'matched' && <span className="status-badge status-matched">✓ 符合</span>}

@@ -640,6 +640,14 @@ body {
   font-size: 13px;
 }
 
+/* 檔案名稱欄：上限 160px，超出以省略號顯示（懸停 title 顯示完整檔名） */
+.filename-cell {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Excel Style Column Filter Popover */
 .filter-trigger-btn {
   padding: 2px 6px;
