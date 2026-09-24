@@ -322,7 +322,7 @@ function App() {
 
   const handleExportMappings = () => {
     downloadFile(JSON.stringify(mappings, null, 2), "qc_mappings_export.json", "application/json");
-    showToast("已下載對照表 JSON 檔案");
+    showToast("已匯出對照表 JSON 檔案");
   };
 
   const processFilesList = async (files, nameOfFolder) => {
@@ -442,7 +442,7 @@ function App() {
 
     if (cachedCounts && cachedCounts.year === year && cachedCounts.filesCount === uploadedFiles.length) {
       exportSummaryJSONInBrowser(cachedCounts.data, year);
-      showToast(`${year} 年度品檢報表統計.json 已下載！`);
+      showToast(`${year} 年度品檢報表統計.json 已匯出！`);
       return;
     }
 
@@ -466,7 +466,7 @@ function App() {
       });
 
       exportSummaryJSONInBrowser(counts, year);
-      showToast(`${year} 年度品檢報表統計.json 已下載！`);
+      showToast(`${year} 年度品檢報表統計.json 已匯出！`);
     } catch (e) {
       if (e.message !== 'ETL cancelled by user') {
         console.error(e);
@@ -479,11 +479,11 @@ function App() {
 
   const handleExportExcel = (year) => {
     if (!cachedCounts || cachedCounts.year !== year) {
-      alert("請先執行一次「輸出 JSON 統計」以產生快取資料。");
+      alert("請先執行一次「匯出 JSON 統計」以產生快取資料。");
       return;
     }
     exportSummaryExcelInBrowser(cachedCounts.data, year);
-    showToast(`已下載 ${year} 年度品檢報表統計 Excel`);
+    showToast(`已匯出 ${year} 年度品檢報表統計 Excel`);
   };
 
   const handleSyncToDashboard = async (year) => {
@@ -753,7 +753,7 @@ function App() {
         return next;
       });
       setActiveYear(year);
-      showToast(`已載入 ${year} 年度 QMS 統計檔 (${file.name})`);
+      showToast(`已匯入 ${year} 年度 QMS 統計檔 (${file.name})`);
     } catch {
       alert(`解析檔案失敗: ${file.name}`);
     }
@@ -942,7 +942,7 @@ function App() {
   const handleDownloadPrompt = () => {
     const filename = `ISO13485_QC_MultiYear_LLM_Prompt_${new Date().toISOString().split('T')[0]}.md`;
     downloadFile(llmExportContent, filename, 'text/markdown;charset=utf-8');
-    showToast("已下載 QMS 診斷指令 .md 檔案");
+    showToast("已匯出 QMS 診斷指令 .md 檔案");
   };
 
   const filteredRows = scannedRows.filter(row => {
@@ -1090,7 +1090,7 @@ function App() {
           <div className="step-content">
             <span className="step-tag">STAGE 01</span>
             <span className="step-title">原始檢驗表單掃描與批次校驗</span>
-            <span className="step-desc">{scannedRows.length > 0 ? `已驗證 ${scannedRows.length} 工作表` : '上傳批次原始 Excel 報表'}</span>
+            <span className="step-desc">{scannedRows.length > 0 ? `已驗證 ${scannedRows.length} 工作表` : '匯入批次原始 Excel 報表'}</span>
           </div>
         </button>
 
@@ -1114,7 +1114,7 @@ function App() {
           <div className="step-content">
             <span className="step-tag">STAGE 03</span>
             <span className="step-title">跨年度品質趨勢與大模型診斷</span>
-            <span className="step-desc">{Object.keys(summaryFiles).length > 0 ? `已載入 ${Object.keys(summaryFiles).length} 個年度` : '製程能力分析與 AI 審查'}</span>
+            <span className="step-desc">{Object.keys(summaryFiles).length > 0 ? `已匯入 ${Object.keys(summaryFiles).length} 個年度` : '製程能力分析與 AI 審查'}</span>
           </div>
         </button>
       </nav>
@@ -1138,7 +1138,7 @@ function App() {
                   className="btn btn-secondary btn-sm"
                   onClick={() => exportToCSV(filteredRows, folderName || "QMS_品管提取清單")}
                 >
-                  <Icons.Download />
+                  <Icons.Upload />
                   <span>匯出 CSV 檢驗清單</span>
                 </button>
                 <button 
@@ -1420,7 +1420,7 @@ function App() {
                   <span>QMS 年度統計報表 (JSON)</span>
                 </div>
                 <p className="etl-card-desc" style={{ marginTop: '4px' }}>
-                  輸出機器可讀之標準化 QC 年度統計 JSON 資料結構，包含 7 大類品檢與每月細項數據。
+                  匯出機器可讀之標準化 QC 年度統計 JSON 資料結構，包含 7 大類品檢與每月細項數據。
                 </p>
               </div>
               <button 
@@ -1428,8 +1428,8 @@ function App() {
                 onClick={() => handleRunBrowserETL(etlYear)}
                 disabled={isProcessingETL || isScanning || uploadedFiles.length === 0}
               >
-                <Icons.Download />
-                <span>輸出 {etlYear} QMS 統計 (JSON)</span>
+                <Icons.Upload />
+                <span>匯出 {etlYear} QMS 統計 (JSON)</span>
               </button>
             </div>
 
@@ -1448,8 +1448,8 @@ function App() {
                 onClick={() => handleExportExcel(etlYear)}
                 disabled={isProcessingETL || isScanning || !cachedCounts}
               >
-                <Icons.Download />
-                <span>下載 {etlYear} Excel 報表</span>
+                <Icons.Upload />
+                <span>匯出 {etlYear} Excel 報表</span>
               </button>
             </div>
 
@@ -1460,7 +1460,7 @@ function App() {
                   <span>7 大類獨立 QC 分冊 (Excel)</span>
                 </div>
                 <p className="etl-card-desc" style={{ marginTop: '4px' }}>
-                  按進料、QIP、裝配、半成品、完成品、零組件與出貨分別輸出獨立 Excel 驗證分冊。
+                  按進料、QIP、裝配、半成品、完成品、零組件與出貨分別匯出獨立 Excel 驗證分冊。
                 </p>
               </div>
               <button 
@@ -1468,8 +1468,8 @@ function App() {
                 onClick={() => handleExportIndividualReports(etlYear)}
                 disabled={isProcessingETL || isScanning || uploadedFiles.length === 0}
               >
-                <Icons.Download />
-                <span>輸出 7 大類分冊 (Excel)</span>
+                <Icons.Upload />
+                <span>匯出 7 大類分冊 (Excel)</span>
               </button>
             </div>
 
@@ -1480,7 +1480,7 @@ function App() {
                   <span>同步至階段 03 儀表板</span>
                 </div>
                 <p className="etl-card-desc" style={{ marginTop: '4px' }}>
-                  將當前 ETL 數據直接同步至可視化儀表板與大模型診斷引擎，免去手動重複上傳。
+                  將當前 ETL 數據直接同步至可視化儀表板與大模型診斷引擎，免去手動重複匯入。
                 </p>
               </div>
               <button 
@@ -1516,7 +1516,7 @@ function App() {
                   className="btn btn-primary btn-sm"
                   onClick={() => document.getElementById('dashboard-file-input')?.click()}
                 >
-                  <Icons.Folder />
+                  <Icons.Download />
                   <span>匯入統計檔 (.json / .xlsx)</span>
                 </button>
 
@@ -1524,7 +1524,7 @@ function App() {
                   <button 
                     className="btn btn-danger btn-sm"
                     onClick={() => {
-                      if (window.confirm("確定要清空所有已載入的報表檔案嗎？")) {
+                      if (window.confirm("確定要清空所有已匯入的報表檔案嗎？")) {
                         setSummaryFiles({});
                         setActiveSheet("");
                         setSelectedItems([]);
@@ -1705,9 +1705,9 @@ function App() {
           ) : (
             <div className="panel-card" style={{ padding: '70px 0', textAlign: 'center' }}>
               <Icons.Chart />
-              <h3 style={{ fontSize: '17px', fontWeight: 700, marginTop: '10px' }}>尚未載入任何 QMS 統計數據</h3>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, marginTop: '10px' }}>尚未匯入任何 QMS 統計數據</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
-                請點擊上方「匯入統計檔」載入現有報表，或由「階段 02」一鍵同步 ETL 結果。
+                請點擊上方「匯入統計檔」匯入現有報表，或由「階段 02」一鍵同步 ETL 結果。
               </p>
             </div>
           )}
@@ -1730,7 +1730,7 @@ function App() {
 
             <div className="modal-body">
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                此數據包已自動整合系統中載入的所有年份品管數據，依據<strong>ISO 13485 醫療器材主任品質稽核員 (Lead Quality Auditor)</strong>規範格式化為 Markdown 統計表與機器可讀 JSON 數據包，可直接複製餵給 ChatGPT, Claude, Gemini, DeepSeek 執行專業品質深度審查與 CAPA 建議。
+                此數據包已自動整合系統中匯入的所有年份品管數據，依據<strong>ISO 13485 醫療器材主任品質稽核員 (Lead Quality Auditor)</strong>規範格式化為 Markdown 統計表與機器可讀 JSON 數據包，可直接複製餵給 ChatGPT, Claude, Gemini, DeepSeek 執行專業品質深度審查與 CAPA 建議。
               </div>
 
               <div className="llm-preview-box">
@@ -1743,8 +1743,8 @@ function App() {
                 關閉
               </button>
               <button className="btn btn-secondary btn-sm" onClick={handleDownloadPrompt}>
-                <Icons.Download />
-                <span>下載 .md 指令檔</span>
+                <Icons.Upload />
+                <span>匯出 .md 指令檔</span>
               </button>
               <button className="btn btn-purple btn-sm" onClick={handleCopyPrompt}>
                 <Icons.Copy />
