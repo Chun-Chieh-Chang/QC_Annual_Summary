@@ -366,7 +366,7 @@
 
 ---
 
-## 2026-06-30 QIP 射出製程品檢資料提取邏輯重構
+## 2026-06-30 QIP 射出製程品檢資料提取邏輯重構（初版：子資料夾範圍）
 
 ### 需求說明
 1. 射出相關的 `QIP-Setup` 與 `QIP-Patrol` 數據限制僅能從 `RawData/{year}/射出檢驗-{year}/QIP-{year}(1~10)` 資料夾中提取。
@@ -430,7 +430,7 @@
 
 ---
 
-## 2026-06-30 QIP 射出製程品檢資料提取邏輯重構
+## 2026-06-30 QIP 射出製程品檢資料提取邏輯重構（終版：Date Code 去重）
 
 ### 需求說明
 1. 射出 Setup 數量統計範圍：整個 `RawData/{year}/射出檢驗-{year}` 目錄及其子資料夾。
@@ -591,7 +591,7 @@
 
 ### 矯正與預防措施 (CAPA)
 
-**精準修正**：在 [etl_pipeline.cjs](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/etl_pipeline.cjs) 的 `processRawDataFile` 函數中，於 `QC10007-R03` 覆寫邏輯區塊內新增「空白樣板守衛」：
+**精準修正**：在 `etl_pipeline.cjs` 的 `processRawDataFile` 函數中，於 `QC10007-R03` 覆寫邏輯區塊內新增「空白樣板守衛」：
 
 ```javascript
 // Blank template guard for QC10007-R03:
@@ -761,7 +761,7 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  - 重構 [src/App.jsx:getUniqueColumnValues](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/App.jsx#L1125-L1155) 的篩選候選值提取算法：
+  - 重構 [src/App.jsx:getUniqueColumnValues](src/App.jsx) 的篩選候選值提取算法：
     1. 在計算某個 `fieldKey` 的候選值時，先對 `scannedRows` 進行一次臨時過濾。
     2. 該臨時過濾會檢查並套用全域 `searchQuery` 與 `statusFilter` 條件。
     3. 遍歷所有的 `columnFilters`：若鍵等於當前 `fieldKey`，則**跳過**；否則套用該鍵的勾選限制。
@@ -791,12 +791,12 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
   1. **高度狀態與監聽器**：
-     - 在 [src/App.jsx](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/App.jsx) 中新增 `leftPanelRef` 及 `leftPanelHeight` 狀態。
+     - 在 [src/App.jsx](src/App.jsx) 中新增 `leftPanelRef` 及 `leftPanelHeight` 狀態。
      - 建立 `useEffect` 監聽器，使用 `ResizeObserver` 在左側容器發生大小改變（如重新上傳檔案、展開一鍵生成器等）時，自動獲取其真實高度。
      - 將 `ref={leftPanelRef}` 綁定至左側 `<aside className="mck-main-content">`。
   2. **動態高度綁定與滾動**：
      - 將 `maxHeight: leftPanelHeight ? \`\${leftPanelHeight}px\` : 'none'\` inline-style 綁定至右側表格容器，並設置 `overflow: 'hidden'`。
-     - 在 [src/index.css](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/index.css) 中，將 `.table-wrapper` 設為 `overflow: auto; flex: 1;`，使表格能在剩餘高度中正常垂直與水平滾動。
+     - 在 [src/index.css](src/index.css) 中，將 `.table-wrapper` 設為 `overflow: auto; flex: 1;`，使表格能在剩餘高度中正常垂直與水平滾動。
 
 ### 進度追蹤
 - [x] 更新開發日誌 (DEV_LOG.md)
@@ -821,7 +821,7 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. **導入 Build 產物斷言**：在 [.github/workflows/deploy.yml](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/.github/workflows/deploy.yml) 的 Build 後，加入 `Show build output` 步驟：
+  1. **導入 Build 產物斷言**：在 [.github/workflows/deploy.yml](.github/workflows/deploy.yml) 的 Build 後，加入 `Show build output` 步驟：
      - 使用 `ls` 與 `find` 列印產出目錄結構。
      - 使用斷言判斷若 `dist/index.html` 不存在，則直接以 Exit Code 1 中斷，防止上傳空 Artifact。
   2. **環境控制放寬**：暫時在部署工作流中移除對 `github-pages` 的 environment 限制，以排除權限審查干擾。
@@ -845,7 +845,7 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. **建立匯出函數**：在 [src/App.jsx](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/App.jsx) 中實作 `exportToCSV(data, name)` 函數，定義中文標題（檔案名稱、檔案路徑、工作表名稱、表單編碼、表單對照名稱、狀態）與欄位對應。
+  1. **建立匯出函數**：在 [src/App.jsx](src/App.jsx) 中實作 `exportToCSV(data, name)` 函數，定義中文標題（檔案名稱、檔案路徑、工作表名稱、表單編碼、表單對照名稱、狀態）與欄位對應。
   2. **中文字態處理**：在寫入 CSV 時，調用既有的 `getStatusLabel` 函數，將內部狀態值（如 `'matched'`）轉換為中文標籤（如 `'✓ 成功識別'`）。
   3. **加裝 UI 按鈕**：在「📂 選取資料夾」載入成功後的按鈕區塊，新增「📄 匯出 CSV」按鈕，點擊時呼叫 `exportToCSV(filteredRows, folderName)`。
 
@@ -863,7 +863,7 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  - 修改 [src/App.jsx](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/App.jsx)，從 `folderName` 載入成功後的按鈕 flex-container 中，徹底移除 `<button onClick={() => exportFieldMapping()}>` 按鈕元素。
+  - 修改 [src/App.jsx](src/App.jsx)，從 `folderName` 載入成功後的按鈕 flex-container 中，徹底移除 `<button onClick={() => exportFieldMapping()}>` 按鈕元素。
   - 移除後，操作列僅保留兩個同等權重的橫向按鈕（「💾 匯出 Excel」與「📄 匯出 CSV」）以及一個「🗑」清除按鈕，平分空間後文字排版極其舒適、寬鬆，不再有任何折行缺陷。
 
 ### 進度追蹤
@@ -891,9 +891,9 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. **導出工具函數**：在 [src/utils/browserETL.js](file:///c:/Users/USER/Downloads/專案/FileName_WorkSheet_Extract/src/utils/browserETL.js) 導出 `detectQCFromFolder` 等底層工具。
-  2. **實作狀態判定**：在 [src/utils/excelParser.js](file:///c:/Users/USER/Downloads/專案/FileName_WorkSheet_Extract/src/utils/excelParser.js) 的 `parseExcelFile` 中實作詳細的 `etlStatus` 與 `etlTimestamp` 判定邏輯。
-  3. **表格與過濾器更新**：修改 [src/App.jsx](file:///c:/Users/USER/Downloads/專案/FileName_WorkSheet_Extract/src/App.jsx) 的過濾與搜尋邏輯，加入新欄位，並加入 McKinsey 風格紅色告警橫幅與「🔍 立即篩選異常」按鈕。
+  1. **導出工具函數**：在 [src/utils/browserETL.js](src/utils/browserETL.js) 導出 `detectQCFromFolder` 等底層工具。
+  2. **實作狀態判定**：在 [src/utils/excelParser.js](src/utils/excelParser.js) 的 `parseExcelFile` 中實作詳細的 `etlStatus` 與 `etlTimestamp` 判定邏輯。
+  3. **表格與過濾器更新**：修改 [src/App.jsx](src/App.jsx) 的過濾與搜尋邏輯，加入新欄位，並加入 McKinsey 風格紅色告警橫幅與「🔍 立即篩選異常」按鈕。
   4. **CSV 匯出欄位同步**：在 `exportToCSV` 中加入 `etlStatus` 與 `etlTimestamp` 欄位。
 
 ### 進度追蹤
@@ -916,7 +916,7 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. **優化資料提取**：修改 [src/App.jsx:processFilesList](file:///c:/Users/USER/Downloads/專案/FileName_WorkSheet_Extract/src/App.jsx)，在將讀取結果映射回 sheetsWithPath 時，透過 `lastIndexOf('/')` 擷取不含檔名的資料夾路徑（`dirPath`），並賦予 `filePath` 屬性。
+  1. **優化資料提取**：修改 [src/App.jsx:processFilesList](src/App.jsx)，在將讀取結果映射回 sheetsWithPath 時，透過 `lastIndexOf('/')` 擷取不含檔名的資料夾路徑（`dirPath`），並賦予 `filePath` 屬性。
   2. **同步 Mock 資料**：將 Mount 時載入的測試 mock 數據中的所有 `filePath` 同步調整為不含檔名的路徑，維持表格載入的一致性。
 
 ### 進度追蹤
@@ -940,12 +940,12 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. **新增 `normalizeScientificNotation` 函數**：在 [src/utils/browserETL.js](file:///c:/Users/USER/Downloads/專案/FileName_WorkSheet_Extract/src/utils/browserETL.js) 中新增並導出此函數。邏輯如下：
+  1. **新增 `normalizeScientificNotation` 函數**：在 [src/utils/browserETL.js](src/utils/browserETL.js) 中新增並導出此函數。邏輯如下：
      - 若輸入字串符合 `^\d{4}\.\d+$`（如 `2601.01`），計算小數位數 $exp$，乘以 $10^{exp}$ 四捨五入重建 6 位基底，拼回 `${base}E-${exp}`（還原為 `260101E-2`）。
      - 若輸入符合標準科學記號字串格式（如 `2.60101e+5`），直接還原為 6 位整數字串。
   2. **於 `parseDateFromString` 中應用**：函數入口處先呼叫 `normalizeScientificNotation`，確保日期字串 `2601.01` 還原後能正確匹配 Date Code。
-  3. **於 QIP 巡檢工作表處理中應用**：在 [browserETL.js:runETLInBrowser](file:///c:/Users/USER/Downloads/專案/FileName_WorkSheet_Extract/src/utils/browserETL.js) 的射出與押出迴圈中，對 `sheetName` 先還原再進行後綴去重與 Date Code 驗證。
-  4. **於 `parseExcelFile` 中全面應用**：修改 [src/utils/excelParser.js](file:///c:/Users/USER/Downloads/專案/FileName_WorkSheet_Extract/src/utils/excelParser.js)，在迴圈起始處先計算 `normalizedSheetName`，取代所有 ETL 判定、過濾與輸出中的 `sheetName`，確保 UI 表格與 CSV 均顯示還原後的正確名稱。
+  3. **於 QIP 巡檢工作表處理中應用**：在 [browserETL.js:runETLInBrowser](src/utils/browserETL.js) 的射出與押出迴圈中，對 `sheetName` 先還原再進行後綴去重與 Date Code 驗證。
+  4. **於 `parseExcelFile` 中全面應用**：修改 [src/utils/excelParser.js](src/utils/excelParser.js)，在迴圈起始處先計算 `normalizedSheetName`，取代所有 ETL 判定、過濾與輸出中的 `sheetName`，確保 UI 表格與 CSV 均顯示還原後的正確名稱。
 
 ### 進度追蹤
 - [x] 更新開發日誌 (DEV_LOG.md)
@@ -964,8 +964,8 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 ### 根因分析與設計 (RCA & Design)
 - **Token 效能優化**：AI 代理常有「過度建構、過度工程」的傾向。Ponytail 的決策階梯與 lazy 開發原則能引導 AI 代理在編寫代碼時優先利用 YAGNI、本機庫、既有依賴和一行解決方案，減少 80% 以上的程式碼生成，藉此提高 token 使用效率與系統穩定度。
 - **整合方式**：
-  1. 將 Ponytail 的核心 rules (來自 `AGENTS.md`) 整合到專案的 [`.agents/AGENTS.md`](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/.agents/AGENTS.md) 中。
-  2. 將 Ponytail 提供的所有客製化 skills (`ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`) 從臨時 Repository 複製到專案的 [`.agents/skills/`](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/.agents/skills/) 中。
+  1. 將 Ponytail 的核心 rules (來自 `AGENTS.md`) 整合到專案的 [`.agents/AGENTS.md`](.agents/AGENTS.md) 中。
+  2. 將 Ponytail 提供的所有客製化 skills (`ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`) 從臨時 Repository 複製到專案的 [`.agents/skills/`](.agents/skills/) 中。
   3. 依據 MECE 原則清理複製過程中產生的 `scratch/ponytail` 臨時檔案，避免膨脹。
 
 ### 矯正與預防措施 (CAPA)
@@ -992,15 +992,15 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 3. 修正系統程式碼中有關「是否納入ETL計算」的狀態判定 Bug。
 
 ### 根因分析與設計 (RCA & Design)
-- **判定鎖死 Bug**：在 [excelParser.js](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/utils/excelParser.js) 中，一般品檢處理分支在最一開始就把 `etlStatus` 初始化為 `"未納入"`，但後續的判定區塊被 `if (etlStatus !== "未納入")` 條件包裹。此條件恆為假，導致正常識別的表單狀態全部被鎖死在 `"未納入"`，繞過了所有月份及子分類提取。
+- **判定鎖死 Bug**：在 [excelParser.js](src/utils/excelParser.js) 中，一般品檢處理分支在最一開始就把 `etlStatus` 初始化為 `"未納入"`，但後續的判定區塊被 `if (etlStatus !== "未納入")` 條件包裹。此條件恆為假，導致正常識別的表單狀態全部被鎖死在 `"未納入"`，繞過了所有月份及子分類提取。
 - **原因判定與回寫**：
   - 寫入腳本 `scratch/update_excel.js`，依據 QIP 射出、押出與一般品檢數據校驗規則，對 26,524 筆數據進行精準匹配。
-  - 對於一般品檢，若需要檢查空白樣板 (QC10007-R03)，則動態載入 workspace 中的 [RawData/2025/](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/RawData/2025) 原始 Excel 文件，讀取對應儲存格判斷批號是否為空。
+  - 對於一般品檢，若需要檢查空白樣板 (QC10007-R03)，則動態載入 workspace 中的 `RawData/2025/` 原始 Excel 文件，讀取對應儲存格判斷批號是否為空。
   - 計算出正確狀態後，在 Excel 中新增 `原因說明` 欄位並更新 `是否納入ETL計算` 欄位，完成回寫。
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. **修正 Bug**：在 [excelParser.js](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/utils/excelParser.js#L173) 的一般品檢 else 分支起始處，將 `etlStatus` 初始化為 `"已納入"`，使後續判定邏輯可以正常執行。
+  1. **修正 Bug**：在 [excelParser.js](src/utils/excelParser.js) 的一般品檢 else 分支起始處，將 `etlStatus` 初始化為 `"已納入"`，使後續判定邏輯可以正常執行。
   2. **數據回寫**：執行回寫腳本，成功更新 `C:\Users\3kids\Downloads\2025 報表_提取結果.xlsx` 共 26,524 筆資料，並建立 `原因說明` 欄位。
   3. **代碼確效**：執行 `npm run build` 確認無編譯錯誤。
   4. **MECE 清理**：清除 `scratch/` 下的暫存分析腳本。
@@ -1030,8 +1030,8 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. **優化 `excelParser.js`**：更新 [src/utils/excelParser.js](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/utils/excelParser.js#L189) 的 `isBlankFile` 判斷邏輯與原因說明。
-  2. **優化 `browserETL.js`**：更新 [src/utils/browserETL.js](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/utils/browserETL.js#L446) 的 `isBlankFile` 過濾邏輯。
+  1. **優化 `excelParser.js`**：更新 [src/utils/excelParser.js](src/utils/excelParser.js) 的 `isBlankFile` 判斷邏輯與原因說明。
+  2. **優化 `browserETL.js`**：更新 [src/utils/browserETL.js](src/utils/browserETL.js) 的 `isBlankFile` 過濾邏輯。
   3. **建構驗證**：重新執行 `npm run build` 確認程式編譯正常。
 
 ### 進度追蹤
@@ -1293,7 +1293,7 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 
 ### 矯正與預防措施 (CAPA)
 - **矯正措施**：
-  1. 還原 [browserETL.js](file:///d:/Self-developed_Apps/FileName_WorkSheet_Extract/src/utils/browserETL.js) 中的雙次讀取邏輯。
+  1. 還原 [browserETL.js](src/utils/browserETL.js) 中的雙次讀取邏輯。
   2. 第一次使用 `bookSheets: true` 僅讀取目錄結構，獲取 SheetNames。
   3. 過濾出 `targetSheets` 後，第二次僅對該目標工作表傳入 `sheets: targetSheets` 進行 `sheetRows: 100` 的精準解析。
 

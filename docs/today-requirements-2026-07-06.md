@@ -4,6 +4,8 @@
 **專案**: FileName_WorkSheet_Extract  
 **開發模式**: 全自動 SkillsBuilder 開發模式
 
+> 補註（2026-09-24）：專案現名 `QC_Annual_Summary`；本文件保留當日所記之舊名 `FileName_WorkSheet_Extract`。
+
 ---
 
 **重要註記**：以下需求從「捨棄本地專案檔案，git pull from github the newest commit」開始記錄，忽略更早的需求。
@@ -120,6 +122,8 @@ git pull origin main
 - [x] 需求已整理至此文檔
 - [ ] 待開始實作
 
+> 補註（2026-09-24）：第四節「ETL 納入狀態追蹤」已於 2026-07-07 實作完成（見 DEV_LOG「2026-07-07 ETL 納入狀態追蹤功能 (ETL Status Tracking for Worksheets)」；表欄位名為「是否納入ETL計算」，篩選器標籤為「是否納入ETL」）。
+
 ---
 
 ## 五、待辦事項
@@ -130,6 +134,8 @@ git pull origin main
 | 2 | 說明狀態欄含義 | 高 | ✅ 已完成 |
 | 3 | 實作工作表與資料夾篩選優化 | 高 | ✅ 已完成 |
 | 4 | 實作 ETL 納入狀態追蹤功能 | 高 | ⏳ 待實作 |
+
+> 補註（2026-09-24）：編號 4「ETL 納入狀態追蹤功能」已於 2026-07-07 完成實作。
 
 ---
 

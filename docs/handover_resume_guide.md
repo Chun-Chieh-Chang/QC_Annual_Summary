@@ -1,7 +1,7 @@
 # 交接與重啟指南 (Handover Resume Guide)
 
 ## 當前專案狀態
-- **專案名稱**：FileName_WorkSheet_Extract (Mouldex QMS 醫療器材品管檢驗數據提取與跨年度確效系統)
+- **專案名稱**：QC_Annual_Summary (Mouldex QMS 醫療器材品管檢驗數據提取與跨年度確效系統)
 - **分支**：`main`
 - **部署環境**：GitHub Pages（透過 GitHub Actions 自動確效並部署）
 - **最新完成進度**：
@@ -49,9 +49,9 @@
 | `src/utils/llmExport.js` | 跨年度 QMS 數據萃取與 ISO 13485 大模型 Prompt 生成引擎 |
 | `src/utils/browserETL.js` | ETL 核心清洗引擎、動態欄位展開、日期與月份解析 |
 | `src/utils/excelParser.js` | Excel 表單掃描、SheetJS 解析、JSON 匯入解析器 |
-| `src/utils/db.js` | QC 表單編碼與名稱對照表 IndexedDB / LocalStorage 持久化 |
+| `src/utils/db.js` | QC 表單編碼與名稱對照表 LocalStorage 持久化 |
 | `src/index.css` | 高階醫材 QMS 儀器工作台設計系統與色票規範 |
-| `scratch/validate_qc_etl.cjs` | 自動化軟體確效測試腳本 (Validation Suite) |
+| `scratch/validate_qc_etl.cjs` | 自動化軟體確效測試腳本 (Validation Suite)（本機 gitignored，未入庫） |
 | `DEV_LOG.md` | 開發日誌（完整記錄所有需求、RCA 根因分析與 CAPA 措施） |
 
 ---
@@ -63,7 +63,7 @@
 npm run dev
 
 # 2. 程式碼規範檢查
-npx eslint src/
+npm run lint
 
 # 3. 軟體確效測試 (Mandatory Software Validation)
 node scratch/validate_qc_etl.cjs
