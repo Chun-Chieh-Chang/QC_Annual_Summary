@@ -1,70 +1,85 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
 
+/* ========================================================================= */
+/* INSET FOCUS — 內凹聚焦設計語彙 (ISO 13485 & GMP CLINICAL WORKBENCH)        */
+/* 外凸 (raised) 承載內容卡片與按鈕；內凹 (inset) 承載輸入框、分頁軌道、       */
+/* 進度條與開關。光影一律採「左上暖白高光 + 右下冷灰柔影」的柔雙陰影，         */
+/* 全系統移除硬邊框，僅保留表格與內容分隔用的極輕量 1px 髮絲線。              */
+/* ========================================================================= */
 :root {
-  /* ========================================================================= */
-  /* INDUSTRIAL MEDTECH WORKBENCH PALETTE (ISO 13485 & GMP STANDARD)           */
-  /* ========================================================================= */
-  
-  /* Deep Slate & Sterile Clinical Laboratory Foundation */
-  --bg-app: #0B132B;            /* Deep Medical Slate 950 */
-  --bg-workbench: #F1F5F9;      /* Clinical Ice Gray 100 */
-  --bg-surface: #FFFFFF;        /* Pure Cleanroom White */
-  --bg-surface-subtle: #F8FAFC; /* Sterile Slate 50 */
-  --bg-card-dark: #1E293B;      /* Technical Dark Card 800 */
-  
-  /* High Precision Typography */
-  --text-primary: #0F172A;      /* Deep Slate 900 */
-  --text-secondary: #475569;    /* Medical Charcoal 600 */
-  --text-muted: #94A3B8;        /* Subtle Slate 400 */
-  --text-light: #F8FAFC;        /* Clean White Text */
+  /* Canvas & Raised / Recessed Surfaces */
+  --bg-app: #E7E9EE;
+  --bg-workbench: #EAECF1;       /* Canvas 冷灰畫布              */
+  --bg-surface: #F6F7FA;         /* Raised 卡片表面              */
+  --bg-surface-subtle: #F1F3F7;  /* 次級表面 / 表頭 / 彈窗頁首    */
+  --bg-inset: #E6E9F0;           /* Inset 內凹表面 (輸入 / 軌道)  */
+  --bg-card-dark: #2E3440;
 
-  /* Precision Clinical Accents (Cobalt & Cyan) */
-  --med-cobalt: #0284C7;        /* Medical Cobalt 600 */
-  --med-cobalt-hover: #0369A1;  /* Cobalt 700 */
-  --med-cobalt-light: #E0F2FE;  /* Cobalt 50 */
-  --med-cobalt-border: #BAE6FD; /* Cobalt 200 */
-  
-  --med-cyan: #06B6D4;          /* Diagnostic Cyan 500 */
-  --med-cyan-light: #ECFEFF;
+  /* High Precision Typography (全系統最小 13px) */
+  --text-primary: #2E3440;
+  --text-secondary: #5F6775;
+  --text-muted: #7A8394;
+  --text-light: #F6F7FA;
+
+  /* Accent — Soft Periwinkle (白底文字對比 4.5:1，符合 WCAG AA) */
+  --med-cobalt: #5172CD;
+  --med-cobalt-hover: #4361BB;
+  --med-cobalt-light: #E8EDFB;
+  --med-cobalt-border: #C9D5F5;
+
+  --med-cyan: #7BA7E0;
+  --med-cyan-light: #EEF3FD;
 
   /* Regulatory Compliance States */
-  --med-pass: #059669;          /* ISO Pass Emerald 600 */
-  --med-pass-bg: #ECFDF5;       /* Emerald 50 */
-  --med-pass-border: #A7F3D0;
-  --med-pass-text: #065F46;
+  --med-pass: #2C8558;
+  --med-pass-bg: #E3F3EA;
+  --med-pass-border: #C3E5D3;
+  --med-pass-text: #256A47;
 
-  --med-warning: #D97706;       /* Re-inspect Amber 600 */
-  --med-warning-bg: #FFFBEB;
-  --med-warning-border: #FDE68A;
-  --med-warning-text: #92400E;
+  --med-warning: #C68A2E;
+  --med-warning-bg: #FCF1E0;
+  --med-warning-border: #EFD9B4;
+  --med-warning-text: #8A5A12;
 
-  --med-alert: #DC2626;         /* Deviation Red 600 */
-  --med-alert-bg: #FEF2F2;
-  --med-alert-border: #FECACA;
-  --med-alert-text: #991B1B;
+  --med-alert: #C4574E;
+  --med-alert-bg: #FBEAE8;
+  --med-alert-border: #F0D2CE;
+  --med-alert-text: #A33C34;
 
-  --med-iso-badge: #4F46E5;      /* Regulatory Indigo */
-  --med-iso-bg: #EEF2FF;
-  --med-iso-border: #C7D2FE;
+  --med-iso-badge: #5172CD;
+  --med-iso-bg: #E9EDFB;
+  --med-iso-border: #D2DCF7;
 
   /* Technical Borders & Dividers */
-  --border-precision: #CBD5E1;  /* Crisp 1px Border Slate 300 */
-  --border-subtle: #E2E8F0;     /* Slate 200 */
-  --border-dark: #334155;       /* Slate 700 */
+  --border-precision: #E1E5EC;
+  --border-subtle: #EBEEF4;
+  --border-dark: #C7CDD8;
 
   /* Fonts */
   --font-family: 'Outfit', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', Consolas, Monaco, monospace;
-  
-  /* Transitions */
-  --transition-fast: all 0.12s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-smooth: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Shadows */
-  --shadow-instrument: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-card: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-popover: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.06);
-  --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.25);
+  /* Radius Scale */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* Transitions */
+  --transition-fast: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Soft Dual Shadows — 光源固定於左上 */
+  --shadow-instrument: -3px -3px 8px rgba(255, 255, 255, 0.95), 4px 4px 10px rgba(158, 172, 192, 0.26);
+  --shadow-raised-sm: -2px -2px 5px rgba(255, 255, 255, 0.95), 2px 2px 6px rgba(158, 172, 192, 0.3);
+  --shadow-card: -6px -6px 14px rgba(255, 255, 255, 0.92), 8px 8px 20px rgba(158, 172, 192, 0.3);
+  --shadow-popover: -4px -4px 10px rgba(255, 255, 255, 0.9), 10px 10px 26px rgba(150, 164, 186, 0.32);
+  --shadow-modal: -8px -8px 22px rgba(255, 255, 255, 0.85), 0 26px 60px rgba(93, 105, 128, 0.26);
+  --shadow-inset: inset 3px 3px 7px rgba(158, 172, 192, 0.35), inset -3px -3px 7px rgba(255, 255, 255, 0.92);
+  --shadow-inset-deep: inset 4px 4px 10px rgba(158, 172, 192, 0.42), inset -3px -3px 8px rgba(255, 255, 255, 0.9);
+  --shadow-accent-glow: 0 7px 16px rgba(81, 114, 205, 0.35);
+  --shadow-pass-glow: 0 7px 16px rgba(44, 133, 88, 0.3);
 }
 
 * {
@@ -75,10 +90,12 @@
 
 body {
   background-color: var(--bg-workbench);
+  background-image: radial-gradient(1100px 520px at 22% -12%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 72%);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-family);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -87,7 +104,7 @@ body {
 .app-container {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 20px 32px 40px 32px;
+  padding: 24px 32px 48px 32px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -95,49 +112,69 @@ body {
 }
 
 /* ========================================================================= */
-/* MEDTECH INSTRUMENT HEADER                                                 */
+/* HEADER — RAISED CARD + PERIWINKLE GRADIENT RULE                           */
 /* ========================================================================= */
 .app-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  gap: 12px 20px;
+  padding: 18px 24px 14px 24px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-precision);
-  border-left: 5px solid var(--med-cobalt);
-  border-radius: 8px;
-  box-shadow: var(--shadow-instrument);
+  border: none;
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+}
+
+/* 標題下方的水平漸層藍規線 (Accent Rule) */
+.app-header::after {
+  content: '';
+  flex: 0 0 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--med-cobalt) 0%, var(--med-cobalt-border) 45%, rgba(201, 213, 245, 0) 100%);
 }
 
 .app-title-group {
   display: flex;
+  flex: 1 1 420px;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .app-main-title {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
   color: var(--text-primary);
-  letter-spacing: -0.4px;
+}
+
+.app-main-title svg {
+  width: 24px;
+  height: 24px;
+  color: var(--med-cobalt);
 }
 
 .medtech-badge-inline {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--med-iso-bg);
-  color: var(--med-iso-badge);
-  border: 1px solid var(--med-iso-border);
+  padding: 3px 10px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--med-cobalt);
+  color: #FFFFFF;
   font-size: 13px;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
+  box-shadow: var(--shadow-accent-glow);
 }
 
 .app-subtitle {
@@ -150,21 +187,23 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-/* Validation LED Indicator */
+/* Validation LED Indicator — raised mint capsule */
 .system-status-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--med-pass-bg);
+  color: var(--med-pass-text);
   font-size: 13px;
   font-weight: 600;
-  color: var(--med-pass-text);
-  background: var(--med-pass-bg);
-  border: 1px solid var(--med-pass-border);
-  padding: 4px 10px;
-  border-radius: 6px;
+  box-shadow: var(--shadow-raised-sm);
 }
 
 .pulse-led {
@@ -172,77 +211,80 @@ body {
   height: 8px;
   border-radius: 50%;
   background: var(--med-pass);
-  box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+  box-shadow: 0 0 0 0 rgba(44, 133, 88, 0.7);
   animation: pulseGreen 1.8s infinite;
 }
 
 @keyframes pulseGreen {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(5, 150, 105, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(44, 133, 88, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(44, 133, 88, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(44, 133, 88, 0); }
 }
 
 /* ========================================================================= */
-/* 3-STAGE WORKFLOW STEPPER (MEDTECH BENCH INSTRUMENT)                       */
+/* 3-STAGE WORKFLOW STEPPER — INSET TRACK + RAISED ACTIVE SEGMENT            */
 /* ========================================================================= */
 .workflow-stepper {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  background: var(--bg-surface);
-  padding: 6px;
-  border-radius: 8px;
-  border: 1px solid var(--border-precision);
-  box-shadow: var(--shadow-instrument);
+  gap: 10px;
+  padding: 8px;
+  border: none;
+  border-radius: var(--r-xl);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
 }
 
 .step-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: var(--bg-surface-subtle);
-  cursor: pointer;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  font-family: inherit;
   text-align: left;
+  cursor: pointer;
   transition: var(--transition-fast);
 }
 
 .step-card:hover {
-  background: #E2E8F0;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .step-card.active {
-  background: var(--med-cobalt-light);
-  border-color: var(--med-cobalt-border);
-  box-shadow: inset 0 0 0 1px var(--med-cobalt);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-raised-sm);
 }
 
 .step-number {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  background: #CBD5E1;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 14px;
   flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--shadow-inset);
   transition: var(--transition-fast);
 }
 
 .step-card.active .step-number {
   background: var(--med-cobalt);
   color: #FFFFFF;
+  box-shadow: var(--shadow-accent-glow);
 }
 
 .step-card.completed .step-number {
   background: var(--med-pass);
   color: #FFFFFF;
+  box-shadow: var(--shadow-pass-glow);
 }
 
 .step-content {
@@ -253,7 +295,7 @@ body {
 .step-tag {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.8px;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
@@ -274,143 +316,162 @@ body {
 }
 
 /* ========================================================================= */
-/* PANELS & CARDS                                                            */
+/* PANELS & CARDS — RAISED SURFACES                                          */
 /* ========================================================================= */
 .panel-card {
+  padding: 20px 24px;
+  border: none;
+  border-radius: var(--r-xl);
   background: var(--bg-surface);
-  border: 1px solid var(--border-precision);
-  border-radius: 8px;
-  padding: 18px 22px;
-  box-shadow: var(--shadow-instrument);
+  box-shadow: var(--shadow-card);
 }
 
 .panel-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .panel-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
-  letter-spacing: -0.2px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.panel-title svg {
+  color: var(--med-cobalt);
 }
 
 .panel-subtitle {
+  margin-top: 4px;
   font-size: 13px;
   color: var(--text-secondary);
-  margin-top: 2px;
 }
 
 /* ========================================================================= */
-/* BUTTONS (PRECISION MEDTECH)                                               */
+/* BUTTONS — RAISED BY DEFAULT, PRESSED (INSET) WHILE ACTIVE                  */
 /* ========================================================================= */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 6px;
+  gap: 7px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: var(--transition-fast);
-  text-decoration: none;
   white-space: nowrap;
-  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-fast);
 }
 
 .btn-primary {
-  background-color: var(--med-cobalt);
+  background: var(--med-cobalt);
   color: #FFFFFF;
+  box-shadow: var(--shadow-accent-glow);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--med-cobalt-hover);
-  box-shadow: var(--shadow-instrument);
+  background: var(--med-cobalt-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(81, 114, 205, 0.42);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-inset-deep);
 }
 
 .btn-secondary {
-  background-color: var(--bg-surface);
-  color: var(--text-primary);
-  border-color: var(--border-precision);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-raised-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: var(--bg-surface-subtle);
-  border-color: #94A3B8;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
 }
 
 .btn-secondary.active {
-  background-color: var(--med-cobalt-light);
+  background: var(--med-cobalt-light);
   color: var(--med-cobalt);
-  border-color: var(--med-cobalt);
   font-weight: 700;
 }
 
 .btn-success {
-  background-color: var(--med-pass);
+  background: var(--med-pass);
   color: #FFFFFF;
+  box-shadow: var(--shadow-pass-glow);
 }
 
 .btn-success:hover:not(:disabled) {
-  background-color: #047857;
+  background: #27764F;
 }
 
 .btn-danger {
-  background-color: var(--med-alert-bg);
+  background: var(--med-alert-bg);
   color: var(--med-alert-text);
-  border-color: var(--med-alert-border);
+  box-shadow: var(--shadow-raised-sm);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #FEE2E2;
+  background: #F7DEDA;
 }
 
 .btn-purple {
-  background-color: var(--med-iso-badge);
+  background: var(--med-iso-badge);
   color: #FFFFFF;
+  box-shadow: var(--shadow-accent-glow);
 }
 
 .btn-purple:hover:not(:disabled) {
-  background-color: #4338CA;
+  background: var(--med-cobalt-hover);
+  transform: translateY(-1px);
 }
 
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btn-sm {
-  padding: 6px 12px;
+  padding: 7px 13px;
   font-size: 13px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 /* ========================================================================= */
-/* UPLOAD ZONE                                                               */
+/* UPLOAD ZONE — RECESSED (INSET) DROP TRAY                                  */
 /* ========================================================================= */
 .upload-zone {
-  border: 2px dashed var(--border-precision);
-  border-radius: 8px;
-  padding: 36px 24px;
-  text-align: center;
-  background: var(--bg-surface-subtle);
-  transition: var(--transition-fast);
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  padding: 40px 24px;
+  border: 1px dashed var(--border-dark);
+  border-radius: var(--r-lg);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
 }
 
 .upload-zone:hover {
@@ -418,129 +479,165 @@ body {
   background: var(--med-cobalt-light);
 }
 
+.upload-zone > svg {
+  width: 26px;
+  height: 26px;
+  color: var(--med-cobalt);
+}
+
 /* ========================================================================= */
-/* REGULATORY STATUS BADGES                                                  */
+/* REGULATORY STATUS BADGES — SOFT RAISED PILLS (Active / Pending / Done)    */
 /* ========================================================================= */
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 4px;
+  gap: 5px;
+  padding: 4px 11px;
+  border: none;
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 700;
-  font-family: var(--font-mono);
-  line-height: 1.3;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: var(--shadow-raised-sm);
 }
 
 .status-matched {
   background-color: var(--med-pass-bg);
   color: var(--med-pass-text);
-  border: 1px solid var(--med-pass-border);
 }
 
 .status-unmatched {
   background-color: var(--med-warning-bg);
   color: var(--med-warning-text);
-  border: 1px solid var(--med-warning-border);
 }
 
 .status-none {
-  background-color: var(--bg-surface-subtle);
+  background-color: var(--bg-inset);
   color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
 }
 
 .status-error {
   background-color: var(--med-alert-bg);
   color: var(--med-alert-text);
-  border: 1px solid var(--med-alert-border);
 }
 
 /* ========================================================================= */
-/* TECHNICAL DATA TABLE                                                      */
+/* TECHNICAL DATA TABLE — RAISED CARD, INSET HEADER, HAIRLINE DIVIDERS        */
 /* ========================================================================= */
 .table-controls {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
 
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
+/* 內凹輸入表面 — Inset Focus 語彙核心 */
 .search-input {
-  padding: 7px 12px;
-  border: 1px solid var(--border-precision);
-  border-radius: 4px;
-  font-size: 14px;
-  color: var(--text-primary);
-  background: var(--bg-surface);
-  outline: none;
   min-width: 220px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
+  color: var(--text-primary);
   font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
 }
 
 .search-input:focus {
-  border-color: var(--med-cobalt);
-  box-shadow: 0 0 0 2px var(--med-cobalt-light);
+  box-shadow: var(--shadow-inset-deep), 0 0 0 3px rgba(81, 114, 205, 0.16);
 }
 
 .filter-select {
-  padding: 7px 12px;
-  border: 1px solid var(--border-precision);
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
   color: var(--text-primary);
-  background: var(--bg-surface);
+  font-family: inherit;
+  font-size: 14px;
   outline: none;
   cursor: pointer;
-  font-family: inherit;
+  transition: var(--transition-fast);
+}
+
+.filter-select:focus {
+  box-shadow: var(--shadow-inset-deep), 0 0 0 3px rgba(81, 114, 205, 0.16);
 }
 
 .table-wrapper {
-  overflow-x: auto;
-  border: 1px solid var(--border-precision);
-  border-radius: 6px;
-  background: var(--bg-surface);
   position: relative;
   max-height: 560px;
+  overflow-x: auto;
+  border: none;
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-card);
 }
 
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
   font-size: 13px;
 }
 
 .data-table th {
-  background-color: #F8FAFC;
-  color: var(--text-secondary);
-  font-weight: 700;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--border-precision);
   position: sticky;
   top: 0;
   z-index: 10;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-precision);
+  border-right: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface-subtle);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
   user-select: none;
 }
 
+.data-table th:first-child {
+  border-top-left-radius: var(--r-lg);
+}
+
+.data-table th:last-child {
+  border-top-right-radius: var(--r-lg);
+  border-right: none;
+}
+
 .data-table td {
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
 }
 
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
 .data-table tr:hover td {
-  background-color: #F0F9FF;
+  background-color: rgba(81, 114, 205, 0.06);
 }
 
 .filepath-cell {
@@ -555,13 +652,14 @@ body {
 
 /* Excel Style Column Filter Popover */
 .filter-trigger-btn {
-  background: transparent;
+  padding: 2px 6px;
   border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px 5px;
-  border-radius: 3px;
   font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition-fast);
 }
 
 .filter-trigger-btn:hover {
@@ -570,9 +668,10 @@ body {
 }
 
 .filter-trigger-btn.active {
-  color: var(--med-cobalt);
-  background: var(--med-cobalt-border);
+  background: var(--med-cobalt);
+  color: #FFFFFF;
   font-weight: 700;
+  box-shadow: var(--shadow-accent-glow);
 }
 
 .filter-backdrop {
@@ -589,16 +688,21 @@ body {
   top: 100%;
   left: 0;
   z-index: 999;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-precision);
-  border-radius: 6px;
-  box-shadow: var(--shadow-popover);
-  width: 240px;
   display: flex;
   flex-direction: column;
-  padding: 8px;
-  margin-top: 4px;
+  width: 250px;
+  margin-top: 6px;
+  padding: 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-popover);
+  /* th 的 uppercase / letter-spacing 不得繼承至彈窗內容 */
+  color: var(--text-primary);
+  font-weight: 500;
   text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .filter-popover-search {
@@ -607,35 +711,41 @@ body {
 
 .filter-popover-input {
   width: 100%;
-  padding: 6px 9px;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
+  color: var(--text-primary);
+  font-family: inherit;
   font-size: 13px;
-  border: 1px solid var(--border-precision);
-  border-radius: 4px;
   outline: none;
 }
 
 .filter-popover-list {
-  max-height: 180px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 3px;
+  max-height: 180px;
   margin-bottom: 6px;
+  overflow-y: auto;
 }
 
 .filter-popover-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  padding: 5px 7px;
+  border-radius: 6px;
   color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 3px;
 }
 
 .filter-popover-item:hover {
-  background: var(--bg-surface-subtle);
+  background: var(--med-cobalt-light);
 }
 
 .filter-popover-actions {
@@ -646,9 +756,9 @@ body {
 }
 
 .filter-popover-btn {
-  padding: 4px 10px;
+  padding: 5px 11px;
+  border-radius: var(--r-sm);
   font-size: 13px;
-  border-radius: 4px;
 }
 
 /* ========================================================================= */
@@ -658,16 +768,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  border-radius: 6px;
+  gap: 10px;
   margin-bottom: 14px;
-  border: 1px solid transparent;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--r-md);
 }
 
 .alert-error {
   background-color: var(--med-alert-bg);
-  border-color: var(--med-alert-border);
   color: var(--med-alert-text);
+  box-shadow: var(--shadow-raised-sm);
 }
 
 /* ========================================================================= */
@@ -676,40 +787,65 @@ body {
 .etl-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-  gap: 14px;
-  margin-top: 14px;
+  gap: 16px;
+  margin-top: 16px;
 }
 
 .etl-action-card {
-  border: 1px solid var(--border-precision);
-  border-radius: 8px;
-  padding: 16px;
-  background: var(--bg-surface);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
+  padding: 18px;
+  border: none;
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-raised-sm);
   transition: var(--transition-fast);
 }
 
 .etl-action-card:hover {
-  border-color: var(--med-cobalt);
-  box-shadow: var(--shadow-instrument);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
 }
 
 .etl-card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.etl-card-title svg {
+  color: var(--med-cobalt);
 }
 
 .etl-card-desc {
   font-size: 13px;
   color: var(--text-secondary);
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+/* ========================================================================= */
+/* SHARED PROGRESS BAR — INSET TRACK + PERIWINKLE GLOW FILL                  */
+/* ========================================================================= */
+.progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, #7A97DC, var(--med-cobalt));
+  box-shadow: 0 0 10px rgba(81, 114, 205, 0.5);
+  transition: width 0.15s ease;
 }
 
 /* ========================================================================= */
@@ -717,7 +853,7 @@ body {
 /* ========================================================================= */
 .dashboard-layout {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -730,22 +866,24 @@ body {
 .sheet-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-precision);
-  border-radius: 8px;
+  gap: 4px;
   padding: 10px;
+  border: none;
+  border-radius: var(--r-lg);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-inset);
 }
 
 .sheet-tab-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: 5px;
-  border: 1px solid transparent;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--text-secondary);
+  font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   text-align: left;
@@ -754,23 +892,23 @@ body {
 }
 
 .sheet-tab-btn:hover {
-  background: var(--bg-surface-subtle);
+  background: rgba(255, 255, 255, 0.65);
   color: var(--text-primary);
 }
 
 .sheet-tab-btn.active {
-  background: var(--med-cobalt-light);
+  background: var(--bg-surface);
   color: var(--med-cobalt);
-  border-color: var(--med-cobalt-border);
   font-weight: 700;
+  box-shadow: var(--shadow-raised-sm);
 }
 
-/* High Precision LED / Digital KPI Metric Cards */
+/* KPI Cards — 數值在上、標題在下的居中儀態 (Inset Focus 資訊卡) */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 @media (max-width: 768px) {
@@ -780,73 +918,82 @@ body {
 }
 
 .kpi-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-precision);
-  border-top: 3px solid var(--med-cobalt);
-  border-radius: 6px;
-  padding: 10px 14px;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: center;
   gap: 2px;
+  padding: 16px 14px;
+  border: none;
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+  text-align: center;
+  box-shadow: var(--shadow-raised-sm);
+  transition: var(--transition-fast);
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow-card);
 }
 
 .kpi-label {
   font-size: 13px;
-  color: var(--text-secondary);
   font-weight: 600;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--text-secondary);
 }
 
 .kpi-val {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--text-primary);
   font-family: var(--font-mono);
-  letter-spacing: -0.5px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  color: var(--med-cobalt);
 }
 
 /* Item Filter Pills */
 .pills-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .pill-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  border: 1px solid var(--border-precision);
+  gap: 7px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: var(--r-pill);
   background: var(--bg-surface);
-  font-size: 13px;
-  font-weight: 500;
   color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: var(--transition-fast);
   user-select: none;
+  box-shadow: var(--shadow-raised-sm);
+  transition: var(--transition-fast);
 }
 
 .pill-item:hover {
-  border-color: #94A3B8;
-  background: var(--bg-surface-subtle);
+  color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .pill-item.active {
   background: var(--med-cobalt-light);
-  border-color: var(--med-cobalt);
   color: var(--med-cobalt);
   font-weight: 700;
 }
 
 .pill-check {
-  width: 6px;
-  height: 6px;
-  border-radius: 2px;
-  background: var(--text-muted);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-dark);
 }
 
 .pill-item.active .pill-check {
@@ -855,8 +1002,8 @@ body {
 
 /* Chart Canvas Area */
 .chart-card {
-  height: 380px;
   position: relative;
+  height: 380px;
   margin-top: 10px;
 }
 
@@ -869,107 +1016,121 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(11, 19, 43, 0.7);
-  backdrop-filter: blur(4px);
+  padding: 20px;
+  background: rgba(46, 52, 64, 0.32);
+  backdrop-filter: blur(6px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
 }
 
 .modal-card {
-  background: var(--bg-surface);
-  border-radius: 8px;
-  border: 1px solid var(--border-precision);
-  box-shadow: var(--shadow-modal);
-  max-width: 860px;
-  width: 100%;
-  max-height: 90vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
   overflow: hidden;
+  border: none;
+  border-radius: var(--r-xl);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-modal);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border-precision);
-  background: #F8FAFC;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-subtle);
 }
 
 .modal-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.modal-close-btn {
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 4px;
-}
-
-.modal-close-btn:hover {
+  font-size: 17px;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
+.modal-title svg {
+  color: var(--med-cobalt);
+}
+
+.modal-close-btn {
+  padding: 6px 9px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.modal-close-btn:hover {
+  color: var(--med-cobalt);
+  background: var(--med-cobalt-light);
+}
+
 .modal-body {
-  padding: 18px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 18px;
-  border-top: 1px solid var(--border-precision);
-  background: #F8FAFC;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface-subtle);
 }
 
 /* LLM Prompt Monospace Preview */
 .llm-preview-box {
-  background: #0B132B;
-  color: #E0F2FE;
+  max-height: 420px;
+  padding: 18px;
+  overflow-y: auto;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--bg-card-dark);
+  box-shadow: 0 10px 24px rgba(46, 52, 64, 0.22);
+  color: #DCE3F5;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.6;
-  padding: 16px;
-  border-radius: 6px;
-  max-height: 420px;
-  overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  border: 1px solid #1E293B;
 }
 
-/* Toast */
+/* Toast — Raised Light Capsule */
 .toast {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  background: #0B132B;
-  color: #FFFFFF;
-  padding: 10px 18px;
-  border-radius: 6px;
-  box-shadow: var(--shadow-popover);
-  font-size: 14px;
-  font-weight: 600;
-  border-left: 4px solid var(--med-cobalt);
   z-index: 2000;
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow-popover);
+}
+
+.toast svg {
+  color: var(--med-cobalt);
 }

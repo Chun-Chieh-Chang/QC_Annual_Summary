@@ -7,17 +7,17 @@ import * as XLSX from 'xlsx';
 
 const MONTH_LABELS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
 
-// MedTech Precision Instrument Palette
+// Inset Focus Soft Palette — 與 --med-cobalt 主色同源的柔霧色階
 const CHART_PALETTE = [
-  '#0284C7', // Medical Cobalt
-  '#059669', // Precision Emerald
-  '#D97706', // Clinical Amber
-  '#DC2626', // Sterile Red
-  '#4F46E5', // Regulatory Indigo
-  '#06B6D4', // Diagnostic Cyan
-  '#E11D48', // Bio Rose
-  '#2563EB', // Electric Blue
-  '#65A30D', // Laboratory Lime
+  '#5172CD', // Periwinkle (主色)
+  '#4E9E92', // Soft Teal
+  '#C68A2E', // Warm Amber
+  '#C4574E', // Dusty Red
+  '#7C7BD1', // Soft Violet
+  '#5FA8D3', // Powder Sky
+  '#A0688F', // Muted Plum
+  '#3E7FB8', // Steel Blue
+  '#8A9A4B', // Sage Olive
 ];
 
 // Clean Technical SVG Icons
@@ -890,7 +890,7 @@ function App() {
           },
           tooltip: {
             padding: 8,
-            backgroundColor: '#0F172A',
+            backgroundColor: '#2E3440',
             titleFont: { family: 'Outfit, sans-serif', weight: 'bold', size: 12 },
             bodyFont: { family: 'JetBrains Mono, monospace', size: 11 }
           }
@@ -899,13 +899,13 @@ function App() {
           x: {
             stacked: true,
             grid: { display: false },
-            ticks: { color: '#64748B', font: { family: 'Outfit, sans-serif', size: 11 } }
+            ticks: { color: '#7A8394', font: { family: 'Outfit, sans-serif', size: 11 } }
           },
           y: {
             stacked: true,
             beginAtZero: true,
-            grid: { color: '#E2E8F0', borderDash: [2, 2] },
-            ticks: { color: '#64748B', font: { family: 'JetBrains Mono, monospace', size: 11 } }
+            grid: { color: '#E1E5EC', borderDash: [2, 2] },
+            ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } }
           }
         }
       }
@@ -1201,8 +1201,8 @@ function App() {
                 正在掃描校驗原始 Excel 表單... {scanProgress ? `(${scanProgress.current}/${scanProgress.total})` : ''}
               </div>
               {scanProgress && (
-                <div style={{ width: '320px', height: '6px', background: '#E2E8F0', borderRadius: '3px', margin: '0 auto', overflow: 'hidden' }}>
-                  <div style={{ width: `${(scanProgress.current / scanProgress.total) * 100}%`, height: '100%', background: 'var(--med-cobalt)', transition: 'width 0.15s ease' }}></div>
+                <div className="progress-track" style={{ width: '320px', margin: '0 auto' }}>
+                  <div className="progress-fill" style={{ width: `${(scanProgress.current / scanProgress.total) * 100}%` }}></div>
                 </div>
               )}
             </div>
@@ -1378,8 +1378,8 @@ function App() {
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>
                 FILE: {etlProgress?.filename}
               </div>
-              <div style={{ width: '100%', height: '6px', background: '#E2E8F0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                <div style={{ width: `${((etlProgress?.current || 0) / (etlProgress?.total || 1)) * 100}%`, height: '100%', background: 'var(--med-cobalt)', transition: 'width 0.1s ease' }}></div>
+              <div className="progress-track" style={{ marginTop: '8px' }}>
+                <div className="progress-fill" style={{ width: `${((etlProgress?.current || 0) / (etlProgress?.total || 1)) * 100}%` }}></div>
               </div>
               <button 
                 className="btn btn-danger btn-sm"

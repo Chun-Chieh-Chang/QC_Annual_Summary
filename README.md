@@ -22,7 +22,7 @@
 - **JSON 匯入儀表板**：支援將 ETL 匯出之 JSON 格式報表（`QC_Annual_Summary_v1`）直接載入 McKinsey 儀表板進行分析，無需重新掃描 Excel 檔案。
 - **ETL 結果快取**：初次轉換完成後自動快取結果資料，後續切換格式或輸出獨立報表時無需重新掃描，大幅提升重複輸出體驗。
 - **GitHub Pages 自動部署**：推送至 `main` 分支後，透過 GitHub Actions 自動構建並部署至 GitHub Pages。
-- **醫療級字級與排版規範**：全系統介面嚴格遵循「最小字體不得小於 13px」與 MedTech High-Precision 階梯式排版規範。
+- **Inset Focus 內凹聚焦視覺語彙**：全系統採「外凸 (raised) 卡片承載內容、內凹 (inset) 表面承載輸入」的柔雙陰影設計（Neumorphism-Lite），搭配長春藍 (Periwinkle) 單一主色、柔彩膠囊標籤、標題漸層藍規線與內凹表頭；並嚴格遵循「最小字體不得小於 13px」與 MedTech High-Precision 階梯式排版規範。
 
 ## 使用方式
 
@@ -65,7 +65,7 @@ npm run build
 │   └── handover_resume_guide.md  # 交接與重啟指南
 ├── src/                          # React SPA 互動儀表板與前端 ETL
 │   ├── App.jsx                   # 主介面（3 階段工作流控制、圖表與彈窗）
-│   ├── index.css                 # 全域樣式 (MedTech 配色 + 最小 13px 排版階梯)
+│   ├── index.css                 # 全域樣式 (Inset Focus 設計代幣：柔雙陰影 + 長春藍主色 + 最小 13px 排版階梯)
 │   ├── main.jsx                  # React 入口
 │   └── utils/
 │       ├── browserETL.js         # ETL 核心（動態欄位 + 民國年 + 去重過濾）

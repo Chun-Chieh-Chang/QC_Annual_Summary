@@ -1,5 +1,48 @@
 # 開發日誌 (DEV_LOG.md)
 
+## 2026-09-24 全系統介面風格改版：Inset Focus 內凹聚焦設計語彙導入
+
+### 需求說明
+1. 依據使用者提供之介面風格截圖，深度解析其設計語彙（柔雙陰影 Neumorphism-Lite、內凹輸入表面、外凸內容卡片、柔彩膠囊標籤、單一長春藍主色、漸層藍規線、極粗幾何無襯線標題），並完整套用至本專案前端介面。
+2. 嚴格維持既有「最小字體不得小於 13px」規範與所有既有 class 名稱 / CSS 變數名稱，確保功能邏輯與 DOM 結構零變動。
+
+### 設計語彙解析與對應實作 (Design Language Extraction)
+| 截圖元素 | 設計規則 | 本專案對應實作 |
+|---|---|---|
+| 冷灰畫布 + 微凸卡片 | 畫布低於卡片明度，光源固定左上 | `--bg-workbench` / `--bg-surface` / `--shadow-card` |
+| 搜尋框、分頁軌道、進度條、開關 | 內凹 (Inset) 表面 | `--bg-inset` + `--shadow-inset` |
+| 卡片、按鈕、膠囊標籤 | 外凸 (Raised) 表面 | `--shadow-raised-sm` / `--shadow-card` |
+| 單一長春藍主色 + 同色光暈 | 僅一組強調色 | `--med-cobalt: #5172CD` + `--shadow-accent-glow` |
+| 標籤 (Active / Pending / Done) | 柔彩底 + 全圓角膠囊 | `.status-badge` / `.pill-item` |
+| 標題區塊 | 極粗幾何無襯線 + 漸層藍規線 | `.app-main-title` (800) + `.app-header::after` |
+| KPI 資訊卡 | 數值在上、說明在下的居中儀態 | `.kpi-card` (`flex-direction: column-reverse`) |
+| 資料表格 | 抬升卡片、內凹表頭、髮絲縱向分隔線 | `.table-wrapper` / `.data-table th` |
+
+### 矯正與預防措施 (CAPA)
+1. **`src/index.css` 重構為設計代幣驅動 (Token-driven)**：於 `:root` 建立 52 組代幣（畫布 / 抬升 / 內凹表面、文字四階、長春藍主色、法規狀態四態、圓角五階 `--r-*`、柔雙陰影 `--shadow-raised-sm` / `--shadow-inset` / `--shadow-inset-deep` / `--shadow-accent-glow`），全檔移除硬邊框，改以「左上暖白高光 + 右下冷灰柔影」呈現層級；所有 class 名稱與既有變數名稱 100% 保留，僅新增 `.progress-track` / `.progress-fill` 兩組共用進度條類別。
+2. **內凹聚焦語彙落地**：`.search-input` / `.filter-select` / `.filter-popover-input` 改為內凹表面；`.workflow-stepper` 改為內凹分頁軌道，內部作用中步驟為抬升白卡；`.sheet-sidebar` 改為內凹側欄，作用中分頁為抬升白卡；`.btn-primary:active` 按壓時轉為內凹（凹陷）回饋。
+3. **無障礙 (WCAG AA) 對比複核**：主色由 `#0284C7` 調整為 `#5172CD`（白底文字對比 4.53:1）；`--med-pass-text`、`--med-warning-text`、`--med-alert-text` 同步加深至 5.5:1 以上；`--text-secondary` / `--text-muted` 提亮至可讀範圍，優於改版前。
+4. **`src/App.jsx` 最小改動 (3 處)**：
+   - `CHART_PALETTE` 換為與長春藍主色同源的 9 色柔霧色階（Chart.js 堆疊柱狀圖）。
+   - Chart.js 軸線刻度 / 格線 / Tooltip 底色對齊新代幣（`#7A8394` / `#E1E5EC` / `#2E3440`）。
+   - 階段 01 掃描與階段 02 ETL 兩條硬編碼進度條，改用 `.progress-track` + `.progress-fill` 類別（取得內凹軌道與藍色光暈填色）。
+5. **確效驗證**：
+   - `npm run lint` → 0 錯誤、0 警告。
+   - `npx vite build` → 21 modules 成功轉換，`dist/assets/index-*.css` 17.59 kB（gzip 3.97 kB）產出。
+   - 程式化比對新舊 CSS 選擇器集合 → 舊檔所有 class **零遺漏**（僅新增 2 組）。
+   - 程式化掃描 `font-size` → 全檔 **0 處**小於 13px，符合醫療級排版底線。
+   - 程式化掃描 `var(--*)` → 39 組引用全數有定義，無失效代幣。
+   - **真實 Chromium 渲染確效 (`scratch/ui_style_check.cjs`)**：以 Playwright 無頭 Chromium 載入 `dist/` 產物，量測 20+ 組關鍵計算樣式（抬升 / 內凹雙陰影、`--med-cobalt = #5172CD`、`--r-pill = 999px`、表頭 `text-transform: uppercase`、表頭 18px 圓角、髮絲分隔線、標題漸層藍規線 `::after`）、全頁最小字級 = 13px、頁面 JS 錯誤 = 0；並輸出 6 張階段截圖（階段 01 / 02 / 03、欄位篩選彈窗、LLM 彈窗、QC 編碼對照彈窗）供視覺複核。
+   - **視覺複核修正**：截圖顯示 `.status-badge` 於窄欄位（狀態 / 是否納入 ETL）發生文字折行，補上 `white-space: nowrap` 使之維持單行膠囊。
+   - 將 `scratch/shots/` 納入 `.gitignore`（沿用 scratch 開發產物不入庫慣例），確效腳本本身受既有 `scratch/*.cjs` 規則保護。
+
+### 已知取捨 (Ponytail 簡化說明)
+- KPI 卡片未加裝飾圖示：現有 `Icons` 集合無「日曆 / 增速」等對應語意圖示，硬套不符語意的圖示反而是視覺負債；改以超粗長春藍數值 + 置中排版達成同等視覺重心。待需要時再補語意正確的圖示。
+- 搜尋框未加左側放大鏡圖示：需改動 3 處 JSX 包裹結構，收益低於 diff 成本，暫緩。
+
+---
+
+
 ## 2026-08-15 專案部門用語校正：全數修正為「品管 (QC)」
 
 ### 需求說明
