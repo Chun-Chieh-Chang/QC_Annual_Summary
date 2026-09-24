@@ -1401,6 +1401,24 @@ if (actualQC === 'QC10007-R03' && json && json.length > 3) {
 - [x] 執行軟體確效腳本 `scratch/validate_qc_etl.cjs` 全數通過
 - [x] 執行 Vite 打包編譯確認零錯誤
 
+---
+
+## 2026-09-24 C4 分期管線計畫終止（決策記錄）
+
+### 決策背景
+1. 「C4 管線」為先前 session 之分期重構計畫代號，僅 Part1 已落地（commit `990a270`：`JSON_FORMAT_ID` 匯出/匯入共用單一來源、`docs/README.md` 文件索引、README「跨平台一致性約束」SSOT 章節）。
+2. Part2+ 規格從未寫入 repo（全庫搜尋無 `C4` 痕跡、DEV_LOG 亦無對應待辦），屬對話脈絡遺失，無法忠實續作。
+3. 使用者確認目前匯出/匯入數據與 ETL 確效（`scratch/validate_qc_etl.cjs` 5/5 通過）皆無異常，Part2+ 已無實質需求。
+
+### 決策
+- C4 計畫**終止**，Part2+ 不再續作；日後若再出現「C4」相關字樣，以本條為準。
+- Part1 成果（SSOT 常數與文件索引）仍有效，維持現狀不回滾。
+
+### 進度追蹤
+- [x] 確認現行數據無異常。
+- [x] 將 C4 終止決策記錄至 DEV_LOG。
+
+
 
 
 
