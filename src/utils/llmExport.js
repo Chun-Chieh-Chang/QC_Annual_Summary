@@ -10,7 +10,7 @@ const MONTH_LABELS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8
  * @param {Object} summaryFiles - Format: { [year]: { [sheetName]: rows } }
  * @returns {Object} Structured data: { years: [], categories: { [sheetName]: { columns: [], yearlyData: { [year]: { monthly: {}, total: 0 } } } }, overall: {} }
  */
-export function extractMultiYearDataset(summaryFiles) {
+function extractMultiYearDataset(summaryFiles) {
   const years = Object.keys(summaryFiles || {}).filter(y => y !== 'compare').sort();
   if (years.length === 0) return null;
 

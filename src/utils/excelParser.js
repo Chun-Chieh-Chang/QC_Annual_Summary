@@ -375,48 +375,6 @@ export const parseExcelFile = async (file, mappings, year = new Date().getFullYe
 };
 
 /**
- * Exports the extraction results to a downloadable Excel file.
- * @param {Array} data - The scanned rows.
- * @param {string} folderName - The sheet and file name.
- */
-export const exportToExcel = (data, folderName = "品管報表統計") => {
-  const wsData = [
-    ["檔案名稱", "工作表名稱", "表單編碼", "表單名稱"]
-  ];
-  
-  data.forEach((row) => {
-    wsData.push([
-      row.fileName,
-      row.sheetName,
-      row.foundCode,
-      row.foundName
-    ]);
-  });
-  
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  
-  // Safe sheet name (length <= 31, no invalid chars)
-  let safeName = folderName
-    .replace(/[:\\/?*[\]]/g, "_")
-    .substring(0, 31);
-  if (!safeName) safeName = "Sheet1";
-  
-  // Fit column widths
-  const maxLens = [10, 10, 10, 10];
-  wsData.forEach(row => {
-    row.forEach((val, i) => {
-      const len = val ? String(val).length : 0;
-      if (len > maxLens[i]) maxLens[i] = len;
-    });
-  });
-  ws['!cols'] = maxLens.map(len => ({ wch: Math.min(len * 2 + 2, 45) }));
-  
-  XLSX.utils.book_append_sheet(wb, ws, safeName);
-  XLSX.writeFile(wb, `${safeName}_工作表提取結果.xlsx`);
-};
-
-/**
  * Parses the summary Excel file dynamically in the client browser.
  * @param {File} file - The Excel file containing the summary sheets.
  * @returns {Promise<Object>} Object mapping sheet names to 2D arrays.

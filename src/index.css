@@ -413,16 +413,6 @@ body {
   font-weight: 700;
 }
 
-.btn-success {
-  background: var(--med-pass);
-  color: #FFFFFF;
-  box-shadow: var(--shadow-pass-glow);
-}
-
-.btn-success:hover:not(:disabled) {
-  background: #27764F;
-}
-
 .btn-danger {
   background: var(--med-alert-bg);
   color: var(--med-alert-text);

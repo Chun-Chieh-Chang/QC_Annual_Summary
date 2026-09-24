@@ -29,7 +29,6 @@ dist-ssr
 .cursorrules
 .windsurfrules
 .rules
-.gitmodules
 .claude-plugin/
 .codex-plugin/
 .continue/
@@ -68,10 +67,12 @@ generate_all_sheets_report.cjs
 # Scratch directory (development/debug artifacts)
 scratch/*.cjs
 scratch/shots/
-!scratch/cleanup.cjs
 
 # Jupyter notebooks (debug artifacts)
 *.ipynb
+
+# Python virtual environment (local)
+.venv/
 
 # Raw input data (large, not part of repo)
 RawData/

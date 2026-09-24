@@ -101,7 +101,7 @@ export function detectQCFromFolder(dirname) {
   return null;
 }
 
-export function parseDateFromString(str) {
+function parseDateFromString(str) {
   if (!str) return null;
   str = normalizeScientificNotation(String(str).trim());
   
@@ -130,7 +130,7 @@ export function parseDateFromString(str) {
   return null;
 }
 
-export function parseDateFromValue(val, formatted) {
+function parseDateFromValue(val, formatted) {
   if (val instanceof Date) {
     return { year: val.getFullYear(), month: val.getMonth() + 1 };
   }
@@ -191,7 +191,7 @@ export function findDateInSheet(ws, qc) {
   return dateInfo;
 }
 
-export function findDateInSheetFallback(json) {
+function findDateInSheetFallback(json) {
   const limit = Math.min(20, json.length);
   for (let r = 0; r < limit; r++) {
     const row = json[r];
@@ -412,7 +412,7 @@ export function extractRawMonth(ws, fileName, sheetName, year, relPath, json, ac
     mn = findDateInSheetFallback(json);
     if (mn) return mn;
   }
-  // Strategy 9: Letter suffix A-L in filename (e.g., 裝配C-2021A.xlsx → A=1月)
+  // Letter-suffix fallback in filename (e.g., 裝配C-2021A.xlsx → A=1月)
   n = fileName.match(/[-_](\d{4})([A-L])\.xlsx$/i);
   if (n) {
     const yr = parseInt(n[1], 10);
