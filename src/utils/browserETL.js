@@ -3,6 +3,9 @@ import * as XLSX from 'xlsx';
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const LETTER_MONTH = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 10, K: 11, L: 12 };
 
+// SSOT：JSON 匯出 (exportSummaryJSONInBrowser) 與匯入 (parseSummaryJSON) 共用之格式識別字串，禁止在其他位置寫死字面值
+export const JSON_FORMAT_ID = 'QC_Annual_Summary_v1';
+
 export const isUUID = (str) => {
   if (!str) return false;
   const s = str.trim().toLowerCase();
@@ -952,7 +955,7 @@ export const exportSummaryJSONInBrowser = (counts, year) => {
     meta: {
       year,
       exportedAt: new Date().toISOString(),
-      format: 'QC_Annual_Summary_v1',
+      format: JSON_FORMAT_ID,
       description: `QC 年度品檢報表統計 (${year}年) — 結構化 JSON 格式，便於 AI 工具解析與分析`,
       totalRecords: grandTotal
     },

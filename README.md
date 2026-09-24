@@ -59,6 +59,7 @@ npm run build
 
 ```
 ├── docs/                         # 開發相關文件與 wiki
+│   ├── README.md                  # 文件索引（本 wiki 首頁：SSOT 分工表與維護規則）
 │   ├── qc-path-analysis/         # 品檢映射路徑分析文檔
 │   ├── today-requirements-*.md   # 歷史需求追溯日誌
 │   ├── 狀態異常訊息.md           # ETL 狀態異常觸發條件說明
@@ -77,12 +78,29 @@ npm run build
 │   └── validate_qc_etl.cjs       # QC ETL 數據映射規則自動確效工具
 ├── .github/workflows/            # GitHub Actions 自動部署配置
 │   └── deploy.yml                # 自動構建與 GitHub Pages 部署腳本
+├── .agents/                      # 專案層 AI 代理規則（QIP 提取規則 + Ponytail 開發模式）
 ├── DEV_LOG.md                    # 開發日誌（含 RCA + CAPA 歷史記錄）
 ├── eslint.config.js              # ESLint 規範設定
 ├── package.json                  # 專案依賴與腳本
 ├── vite.config.js                # Vite 配置檔
 └── .gitignore                    # Git 忽略規則
 ```
+
+## 資訊架構與 SSOT 原則 (Single Source of Truth)
+
+本專案的開發資訊依「單一事實來源 (SSOT) + MECE」原則分屬三個互斥且窮盡的源頭；其他文件只引用、不複述：
+
+| 資訊域 | SSOT 檔案 | 內容範圍 (MECE 分工) |
+|---|---|---|
+| 專案總覽、功能規格、報表結構、ETL 統計規則 | `README.md`（本檔） | 使用者可見的功能與規格、目錄樹、QC10007-R03 子類別規則表 |
+| 時序開發記錄（需求 / RCA / CAPA / 開發節點） | `DEV_LOG.md` | 依日期倒序之唯一開發史；所有變更節點以此為準 |
+| 主題式技術文件（wiki） | `docs/`（入口 `docs/README.md`） | 狀態異常觸發條件、QC10002-R02 映射分析、歷史需求快照、交接指南 |
+
+跨平台一致性約束（架構同構性與數據一致性）：
+
+- **部署基底路徑**：唯一來源為 `vite.config.js` 的 `base: '/QC_Annual_Summary/'`，本機開發與 GitHub Pages 部署同構。
+- **JSON 資料格式識別**：唯一來源為 `src/utils/browserETL.js` 匯出之 `JSON_FORMAT_ID`（`QC_Annual_Summary_v1`），匯出與匯入兩側共用同一常數，禁止再寫死字面值。
+- **最小字級**：全系統 ≥ 13px，由 `src/index.css` 設計代幣層與排版階梯強制。
 
 ## 技術棧
 

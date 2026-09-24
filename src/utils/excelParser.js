@@ -5,7 +5,8 @@ import {
   getRawSubCategory, 
   extractRawMonth,
   findDateInSheet,
-  normalizeScientificNotation
+  normalizeScientificNotation,
+  JSON_FORMAT_ID
 } from './browserETL.js';
 
 const LETTER_MONTH = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 10, K: 11, L: 12 };
@@ -411,7 +412,7 @@ export const parseSummaryExcel = (file) => {
  * 
  * Expected JSON structure matches the format from browserETL.js exportSummaryJSONInBrowser:
  * {
- *   meta: { year, exportedAt, format: 'QC_Annual_Summary_v1', totalRecords },
+ *   meta: { year, exportedAt, format: JSON_FORMAT_ID, totalRecords },
  *   categories: [{
  *     qcCode, title, sheetLabel,
  *     subCategories: [{ name, monthly: { 1: count, ... }, total }],
@@ -426,7 +427,7 @@ export const parseSummaryJSON = (file) => {
     reader.onload = (e) => {
       try {
         const json = JSON.parse(e.target.result);
-        if (!json || json.meta?.format !== 'QC_Annual_Summary_v1') {
+        if (!json || json.meta?.format !== JSON_FORMAT_ID) {
           reject(new Error('不支援的 JSON 格式'));
           return;
         }
