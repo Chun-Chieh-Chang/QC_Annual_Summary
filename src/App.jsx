@@ -451,6 +451,9 @@ function App() {
     }
 
     if (cachedCounts && cachedCounts.year === year && cachedCounts.filesCount === uploadedFiles.length) {
+      if (outputDirHandle === null) {
+        showToast("此瀏覽器不支援選擇輸出資料夾，已改用瀏覽器下載（建議使用 Chrome / Edge）。");
+      }
       try {
         await exportSummaryJSONInBrowser(cachedCounts.data, year, outputDirHandle);
         showToast(`${year} 年度品檢報表統計.json 已匯出！`);
@@ -480,6 +483,9 @@ function App() {
         filesCount: uploadedFiles.length
       });
 
+      if (outputDirHandle === null) {
+        showToast("此瀏覽器不支援選擇輸出資料夾，已改用瀏覽器下載（建議使用 Chrome / Edge）。");
+      }
       try {
         await exportSummaryJSONInBrowser(counts, year, outputDirHandle);
         showToast(`${year} 年度品檢報表統計.json 已匯出！`);
@@ -506,6 +512,9 @@ function App() {
     if (outputDirHandle === false) {
       showToast("已取消匯出年度統計。");
       return;
+    }
+    if (outputDirHandle === null) {
+      showToast("此瀏覽器不支援選擇輸出資料夾，已改用瀏覽器下載（建議使用 Chrome / Edge）。");
     }
     try {
       await exportSummaryExcelInBrowser(cachedCounts.data, year, outputDirHandle);
@@ -627,6 +636,9 @@ function App() {
       if (outputDirHandle === false) {
         showToast("已取消匯出獨立分冊。");
         return;
+      }
+      if (outputDirHandle === null) {
+        showToast("此瀏覽器不支援選擇輸出資料夾，已改用瀏覽器下載（建議使用 Chrome / Edge）。");
       }
       await exportIndividualReportsInternal(counts, year, outputDirHandle);
       showToast(`${year} 年度 7 大類獨立 QC 分冊匯出完成！`);
@@ -979,6 +991,9 @@ function App() {
     if (outputDirHandle === false) {
       showToast("已取消匯出 .md 指令檔。");
       return;
+    }
+    if (outputDirHandle === null) {
+      showToast("此瀏覽器不支援選擇輸出資料夾，已改用瀏覽器下載（建議使用 Chrome / Edge）。");
     }
     try {
       await writeTextToFileTarget(outputDirHandle, filename, llmExportContent, 'text/markdown;charset=utf-8');
