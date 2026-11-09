@@ -203,7 +203,7 @@ function App() {
   const [summaryFiles, setSummaryFiles] = useState({});
   const [activeYear, setActiveYear] = useState("2025");
   const [activeSheet, setActiveSheet] = useState("");
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedNames, setSelectedNames] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [compareYearSelection, setCompareYearSelection] = useState({});
 
@@ -249,10 +249,13 @@ function App() {
     return items;
   }, [activeSheet, summaryData]);
 
+  // 有效選取項目：選取狀態以「名稱」為鍵，切換年度時自動映射到該年金鑰年份的欄位，
+  // 避免跨年度欄位順序不同時（例：2026 新增 ICU 欄）誤讀相鄰細項。
   const effectiveSelectedItems = useMemo(() => {
-    if (selectedItems.length > 0) return selectedItems;
-    return availableItems.slice(0, 4);
-  }, [selectedItems, availableItems]);
+    if (selectedNames.length === 0) return availableItems.slice(0, 4);
+    const byName = new Map(availableItems.map(item => [item.name, item]));
+    return selectedNames.map(name => byName.get(name)).filter(Boolean);
+  }, [selectedNames, availableItems]);
 
   const updateMappings = (newMappings) => {
     setMappings(newMappings);
@@ -1527,7 +1530,7 @@ function App() {
                       if (window.confirm("確定要清空所有已匯入的報表檔案嗎？")) {
                         setSummaryFiles({});
                         setActiveSheet("");
-                        setSelectedItems([]);
+                        setSelectedNames([]);
                         showToast("已清空所有報表");
                       }
                     }}
@@ -1650,13 +1653,13 @@ function App() {
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button 
                           className="btn btn-secondary btn-sm"
-                          onClick={() => setSelectedItems(availableItems)}
+                          onClick={() => setSelectedNames(availableItems.map(i => i.name))}
                         >
                           全選
                         </button>
                         <button 
                           className="btn btn-secondary btn-sm"
-                          onClick={() => setSelectedItems([])}
+                          onClick={() => setSelectedNames([])}
                         >
                           清空
                         </button>
@@ -1669,14 +1672,14 @@ function App() {
                       <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>無可選項目</p>
                     ) : (
                       availableItems.map((item) => {
-                        const active = effectiveSelectedItems.some(i => i.idx === item.idx);
+                        const active = effectiveSelectedItems.some(i => i.name === item.name);
                         return (
                           <div 
                             key={item.idx} 
                             className={`pill-item ${active ? 'active' : ''}`}
                             onClick={() => {
-                              if (active) setSelectedItems(effectiveSelectedItems.filter(i => i.idx !== item.idx));
-                              else setSelectedItems([...effectiveSelectedItems, item]);
+                              if (active) setSelectedNames(effectiveSelectedItems.filter(i => i.name !== item.name).map(i => i.name));
+                              else setSelectedNames([...effectiveSelectedItems.map(i => i.name), item.name]);
                             }}
                           >
                             <span className="pill-check"></span>
