@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { getMappings, saveMappings, resetMappings } from './utils/db';
 import { parseExcelFile, parseSummaryExcel, parseSummaryJSON } from './utils/excelParser';
 import { runETLInBrowser, exportSummaryExcelInBrowser, exportSummaryJSONInBrowser, isUUID } from './utils/browserETL';
-import { generateMultiYearLLMPrompt, downloadFile, copyTextToClipboard } from './utils/llmExport';
+import { generateMultiYearLLMPrompt, downloadFile, copyTextToClipboard, pickOutputDirectory, writeTextToFileTarget } from './utils/llmExport';
 import * as XLSX from 'xlsx';
 
 const MONTH_LABELS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
@@ -443,9 +443,21 @@ function App() {
   const handleRunBrowserETL = async (year) => {
     if (!uploadedFiles || uploadedFiles.length === 0) return;
 
+    // 先讓使用者選定輸出資料夾；瀏覽器不支援時 outputDirHandle 為 null（退回一般下載）
+    const outputDirHandle = await pickOutputDirectory();
+    if (outputDirHandle === false) {
+      showToast("已取消匯出年度統計。");
+      return;
+    }
+
     if (cachedCounts && cachedCounts.year === year && cachedCounts.filesCount === uploadedFiles.length) {
-      exportSummaryJSONInBrowser(cachedCounts.data, year);
-      showToast(`${year} 年度品檢報表統計.json 已匯出！`);
+      try {
+        await exportSummaryJSONInBrowser(cachedCounts.data, year, outputDirHandle);
+        showToast(`${year} 年度品檢報表統計.json 已匯出！`);
+      } catch (e) {
+        console.error(e);
+        alert("匯出失敗: " + e.message);
+      }
       return;
     }
 
@@ -468,8 +480,13 @@ function App() {
         filesCount: uploadedFiles.length
       });
 
-      exportSummaryJSONInBrowser(counts, year);
-      showToast(`${year} 年度品檢報表統計.json 已匯出！`);
+      try {
+        await exportSummaryJSONInBrowser(counts, year, outputDirHandle);
+        showToast(`${year} 年度品檢報表統計.json 已匯出！`);
+      } catch (e) {
+        console.error(e);
+        alert("匯出失敗: " + e.message);
+      }
     } catch (e) {
       if (e.message !== 'ETL cancelled by user') {
         console.error(e);
@@ -480,13 +497,23 @@ function App() {
     }
   };
 
-  const handleExportExcel = (year) => {
+  const handleExportExcel = async (year) => {
     if (!cachedCounts || cachedCounts.year !== year) {
       alert("請先執行一次「匯出 JSON 統計」以產生快取資料。");
       return;
     }
-    exportSummaryExcelInBrowser(cachedCounts.data, year);
-    showToast(`已匯出 ${year} 年度品檢報表統計 Excel`);
+    const outputDirHandle = await pickOutputDirectory();
+    if (outputDirHandle === false) {
+      showToast("已取消匯出年度統計。");
+      return;
+    }
+    try {
+      await exportSummaryExcelInBrowser(cachedCounts.data, year, outputDirHandle);
+      showToast(`已匯出 ${year} 年度品檢報表統計 Excel`);
+    } catch (e) {
+      console.error(e);
+      alert("匯出失敗: " + e.message);
+    }
   };
 
   const handleSyncToDashboard = async (year) => {
@@ -596,7 +623,11 @@ function App() {
     }
 
     try {
-      const outputDirHandle = window.showDirectoryPicker ? await window.showDirectoryPicker().catch(() => null) : null;
+      const outputDirHandle = await pickOutputDirectory();
+      if (outputDirHandle === false) {
+        showToast("已取消匯出獨立分冊。");
+        return;
+      }
       await exportIndividualReportsInternal(counts, year, outputDirHandle);
       showToast(`${year} 年度 7 大類獨立 QC 分冊匯出完成！`);
     } catch (e) {
@@ -942,10 +973,20 @@ function App() {
     }
   };
 
-  const handleDownloadPrompt = () => {
+  const handleDownloadPrompt = async () => {
     const filename = `ISO13485_QC_MultiYear_LLM_Prompt_${new Date().toISOString().split('T')[0]}.md`;
-    downloadFile(llmExportContent, filename, 'text/markdown;charset=utf-8');
-    showToast("已匯出 QMS 診斷指令 .md 檔案");
+    const outputDirHandle = await pickOutputDirectory();
+    if (outputDirHandle === false) {
+      showToast("已取消匯出 .md 指令檔。");
+      return;
+    }
+    try {
+      await writeTextToFileTarget(outputDirHandle, filename, llmExportContent, 'text/markdown;charset=utf-8');
+      showToast("已匯出 QMS 診斷指令 .md 檔案");
+    } catch (e) {
+      console.error(e);
+      alert("匯出失敗: " + e.message);
+    }
   };
 
   const filteredRows = scannedRows.filter(row => {

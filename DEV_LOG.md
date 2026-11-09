@@ -1,5 +1,20 @@
 # 開發日誌 (DEV_LOG.md)
 
+## 2026-11-09 年度統計匯出改為可選輸出資料夾（File System Access API 統一管線）
+
+### 需求說明
+1. 使用者回報：選取原始品檢資料夾時可以自由選擇，但匯出年度統計報表（JSON / Excel）與 .md 指令檔卻直接輸出到固定位置，無法選擇輸出資料夾。
+
+### 重點改善選項 (CAPA)
+1. `src/utils/llmExport.js` 新增共用輔助（緊鄰既有 `downloadFile`）：
+   - `pickOutputDirectory()`：File System Access API 資料夾選擇；回傳 handle / `null`（不支援，退回一般下載）/ `false`（使用者取消）。
+   - `writeBlobToFileTarget()` / `writeTextToFileTarget()`：有資料夾控制代碼時經 `createWritable()` 直接寫入，否則退回 `<a download>` 下載。
+2. `src/utils/browserETL.js`：`exportSummaryJSONInBrowser` / `exportSummaryExcelInBrowser` 改為 async，新增第三參數 `outputDirHandle`，改經 `writeBlobToFileTarget` 寫出（Excel 改用 `XLSX.write` + Blob）。
+3. `src/App.jsx` 四個匯出點統一「先選資料夾→寫出」流程，取消選擇即中止匯出（不再發生取消後仍下載到預設資料夾）：年度統計 JSON（快取/重算兩路徑）、年度統計 Excel、.md LLM 指令檔、7 大類獨立分冊（同款語意校正）。
+4. 驗證：`npm run lint` 0 錯誤；`vite build` 通過。
+
+---
+
 ## 2026-11-09 修正 Dashboard 細項篩選（pill）跨年度選取錯位
 
 ### 需求說明

@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { writeBlobToFileTarget } from './llmExport';
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const LETTER_MONTH = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, J: 10, K: 11, L: 12 };
@@ -766,7 +767,7 @@ export const runETLInBrowser = async (filesList, year, onProgress) => {
   return counts;
 };
 
-export const exportSummaryExcelInBrowser = (counts, year) => {
+export const exportSummaryExcelInBrowser = async (counts, year, outputDirHandle = null) => {
   const wb = XLSX.utils.book_new();
 
   const monthArray = (data) => MONTHS.map(m => (data && data[m]) || 0);
@@ -869,7 +870,12 @@ export const exportSummaryExcelInBrowser = (counts, year) => {
   // 7. 出貨檢驗 (QC10008-R02)
   addCategorySheet('出貨檢驗(QC10008-R02)', 'QC10008-R02', '出貨檢驗');
 
-  XLSX.writeFile(wb, `${year}品檢報表統計.xlsx`);
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  await writeBlobToFileTarget(
+    outputDirHandle,
+    `${year}品檢報表統計.xlsx`,
+    new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  );
 };
 
 /**
@@ -885,7 +891,7 @@ const QC_META = {
   'QC10008-R02': { title: '出貨品檢記錄表', sheetLabel: '出貨檢驗' }
 };
 
-export const exportSummaryJSONInBrowser = (counts, year) => {
+export const exportSummaryJSONInBrowser = async (counts, year, outputDirHandle = null) => {
   const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   const categories = [];
@@ -969,12 +975,5 @@ export const exportSummaryJSONInBrowser = (counts, year) => {
   };
 
   const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${year}品檢報表統計.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  await writeBlobToFileTarget(outputDirHandle, `${year}品檢報表統計.json`, blob);
 };

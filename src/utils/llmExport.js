@@ -246,6 +246,51 @@ export function downloadFile(content, fileName, mimeType = 'text/markdown;charse
 }
 
 /**
+ * 讓使用者選擇輸出資料夾（File System Access API）。
+ * @returns {Promise<FileSystemDirectoryHandle|null|false>}
+ *   - handle：成功選擇的資料夾控制代碼
+ *   - null：瀏覽器不支援（呼叫端應退回一般下載）
+ *   - false：使用者取消選擇（呼叫端應中止匯出）
+ */
+export async function pickOutputDirectory() {
+  if (!window.showDirectoryPicker) return null;
+  try {
+    return await window.showDirectoryPicker({ mode: 'write' });
+  } catch (e) {
+    if (e && e.name === 'AbortError') return false;
+    return null;
+  }
+}
+
+/**
+ * 將 Blob 寫入選定資料夾；未提供資料夾控制代碼時，退回瀏覽器一般下載。
+ */
+export async function writeBlobToFileTarget(outputDirHandle, fileName, blob) {
+  if (outputDirHandle && outputDirHandle.getFileHandle) {
+    const fileHandle = await outputDirHandle.getFileHandle(fileName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * 將文字內容寫入選定資料夾（writeBlobToFileTarget 的文字便捷封裝）。
+ */
+export async function writeTextToFileTarget(outputDirHandle, fileName, content, mimeType = 'text/markdown;charset=utf-8') {
+  await writeBlobToFileTarget(outputDirHandle, fileName, new Blob([content], { type: mimeType }));
+}
+
+/**
  * Copies text to system clipboard.
  */
 export async function copyTextToClipboard(text) {
