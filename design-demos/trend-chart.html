@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>月份趨勢圖方向初稿 ×3</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    --med-cobalt:#5172CD; --teal:#4E9E92; --text-primary:#2B3445; --text-secondary:#5B667A;
+    --text-muted:#98A2B5; --bg:#F4F6FB; --panel:#fff; --border-subtle:#E4E9F2;
+    --font-main:'Outfit','Noto Sans TC',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:var(--font-main);color:var(--text-primary);padding:36px 40px 80px;max-width:1240px;margin:0 auto}
+  header h1{font-size:22px;font-weight:700}
+  header p{font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.6}
+  .dir-label{margin:34px 0 4px;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--med-cobalt);font-family:var(--font-mono)}
+  .dir-desc{font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6}
+  .stage{background:var(--panel);border:1px solid var(--border-subtle);border-radius:12px;padding:20px}
+  .chart-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .chart-title h3{font-size:15px;font-weight:700}
+  .chart-title span{font-size:12px;color:var(--text-muted)}
+  .box{position:relative}
+  .note{font-size:12px;color:var(--text-muted);margin-top:12px;font-family:var(--font-mono)}
+  .seg{display:inline-flex;border:1px solid var(--border-subtle);border-radius:8px;overflow:hidden}
+  .seg button{border:none;background:#fff;font-family:var(--font-main);font-size:12.5px;font-weight:600;color:var(--text-secondary);padding:6px 14px;cursor:pointer}
+  .seg button.on{background:#EDF1FB;color:var(--med-cobalt)}
+  /* 方向 C 帶狀 */
+  .strip{display:flex;flex-direction:column;gap:0}
+  .monthrow{display:grid;grid-template-columns:44px 1fr 150px;align-items:center;gap:14px;padding:7px 0;border-bottom:1px solid #F0F3F9}
+  .monthrow:last-child{border-bottom:none}
+  .monthrow .m{font-family:var(--font-mono);font-size:12px;color:var(--text-muted)}
+  .monthrow .bar{height:14px;background:linear-gradient(90deg,#5172CDDD,#5172CD99);border-radius:4px;min-width:2px;transition:width .3s}
+  .monthrow .bar:hover{background:#4165C0}
+  .monthrow .q{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
+  .monthrow .q .mini{flex:1;height:4px;background:#EDF1F7;border-radius:2px;overflow:hidden}
+  .monthrow .q .mini i{display:block;height:100%;background:var(--teal);border-radius:2px}
+  .monthead{display:grid;grid-template-columns:44px 1fr 150px;gap:14px;font-size:11px;color:var(--text-muted);font-family:var(--font-mono);padding-bottom:8px;border-bottom:1px solid var(--border-subtle)}
+</style>
+</head>
+<body>
+<header>
+  <h1>月份訂單趨勢 · 三個圖表方向初稿</h1>
+  <p>資料為 2026 年真實量級：訂單數 ≈ 每月 85–200 筆，數量 ≈ 最高 4,800 萬 pcs。值得注意的是「訂單數（筆）」與「數量（pcs）」量綱完全不同——問題核心是這兩個量綱要分開講還是合成一圖。</p>
+</header>
+
+<!-- ═══════════ 方向 A ═══════════ -->
+<div class="dir-label">方向 A · 小倍數雙圖（同一 X 軸上下對齊）</div>
+<div class="dir-desc">把兩個量綱拆成上下兩張迷你圖，共享月份軸：上圖看「單量節奏」，下圖看「產出規模」。各用單一數軸、無雙軸雜訊；數量軸以「萬」為單位。</div>
+<div class="stage">
+  <div class="chart-title"><h3>月份訂單趨勢 · 2026 年</h3><span>上：訂單數（筆）　下：應交數量（萬 pcs）</span></div>
+  <div class="box" style="height:150px"><canvas id="a1"></canvas></div>
+  <div style="height:10px"></div>
+  <div class="box" style="height:110px"><canvas id="a2"></canvas></div>
+</div>
+
+<!-- ═══════════ 方向 B ═══════════ -->
+<div class="dir-label">方向 B · 單一量綱 + 切換（極簡）</div>
+<div class="dir-desc">一個時間只講一件事：預設顯示訂單數，右上角分頁切換數量。柱體帶資料標籤、去掉網格與 Y 軸刻度，圖表回歸「形狀傳達」，精確數字靠 hover。</div>
+<div class="stage">
+  <div class="chart-title">
+    <h3>月份訂單趨勢 · 2026 年</h3>
+    <div class="seg" id="metricToggle"><button class="on" data-m="count">訂單數</button><button data-m="qty">數量 (萬 pcs)</button></div>
+  </div>
+  <div class="box" style="height:280px"><canvas id="b1"></canvas></div>
+</div>
+
+<!-- ═══════════ 方向 C ═══════════ -->
+<div class="dir-label">方向 C · 月份帶狀條（表格圖混合體）</div>
+<div class="dir-desc">12 個月份一律直排版：左月份、中訂單數量條（長度=筆數）、右數量迷你條＋數值。兩個量綱並存但各歸各位，適合逐月對帳的「計畫/物控」視角。</div>
+<div class="stage">
+  <div class="chart-title"><h3>月份訂單帶狀表 · 2026 年</h3><span>條長 = 訂單數；右欄 = 應交數量</span></div>
+  <div class="strip" id="strip">
+    <div class="monthead"><span>月份</span><span>訂單數（筆）</span><span>應交數量 (萬 pcs)</span></div>
+  </div>
+</div>
+
+<script>
+const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const COUNT=[1,85,200,100,133,121,145,145,117,157,100,2];
+const QTY_W=[8,1900,2900,1350,2450,2450,3050,4750,2900,3320,2250,80]; // 萬 pcs
+
+const gridX={grid:{display:false},ticks:{color:'#8B94A8',font:{family:'JetBrains Mono, monospace',size:10.5}}};
+const tooltip={padding:10,backgroundColor:'#2B3445',titleFont:{family:'Outfit, sans-serif',weight:'bold',size:12},bodyFont:{family:'JetBrains Mono, monospace',size:11}};
+
+/* A: 小倍數雙圖 */
+new Chart(a1,{type:'bar',data:{labels:MONTHS,datasets:[{data:COUNT,backgroundColor:'#5172CD',borderRadius:3,barPercentage:.72}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip},
+ scales:{x:gridX,y:{beginAtZero:true,border:{display:false},grid:{color:'#EFF2F8'},ticks:{color:'#8B94A8',font:{family:'JetBrains Mono, monospace',size:10},maxTicksLimit:5},title:{display:true,text:'訂單數（筆）',color:'#98A2B5',font:{family:'Outfit',size:10}}}}}});
+new Chart(a2,{type:'line',data:{labels:MONTHS,datasets:[{data:QTY_W,borderColor:'#4E9E92',borderWidth:2,pointRadius:2.5,pointBackgroundColor:'#4E9E92',fill:true,backgroundColor:'rgba(78,158,146,.10)',tension:.35}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' 萬 pcs'}}},
+ scales:{x:gridX,y:{beginAtZero:true,border:{display:false},grid:{color:'#EFF2F8'},ticks:{color:'#8B94A8',font:{family:'JetBrains Mono, monospace',size:10},maxTicksLimit:4,callback:v=>v/100+'00萬'},suggestedMax:5200}}}});
+
+/* B: 單一量綱切換 */
+const bChart=new Chart(b1,{type:'bar',data:{labels:MONTHS,datasets:[{data:COUNT,backgroundColor:'#5172CD',hoverBackgroundColor:'#4165C0',borderRadius:4,barPercentage:.66}]},
+ options:{responsive:true,maintainAspectRatio:false,
+ plugins:{legend:{display:false},tooltip,
+  /* 資料標籤手繪：via afterDatasetsDraw */
+ },
+ scales:{x:gridX,y:{display:false,beginAtZero:true,suggestedMax:230}}}});
+Chart.register;
+bChart.options.plugins.afterDraw = null;
+new Chart.prototype; /* noop */
+bChart.options.animation=false;
+/* 數值標籤 */
+const drawLabels=(chart,fmt)=>chart.options.plugins.afterDatasetsDraw;
+/* 用 plugin 實作資料標籤 */
+const labelPlugin={
+ id:'valueLabels',
+ afterDatasetsDraw(c){
+  const {ctx}=c; const meta=c.getDatasetMeta(0);
+  ctx.save(); ctx.font='10px JetBrains Mono, monospace'; ctx.fillStyle='#7A8394'; ctx.textAlign='center';
+  meta.data.forEach((bar,i)=>{const v=c.data.datasets[0].data[i]; ctx.fillText(fmt(v),bar.x,bar.y-6);});
+  ctx.restore();
+ }
+};
+bChart.destroy();
+const fmtCount=v=>v;
+const fmtQty=v=>(v/100>=1?(v/100).toFixed(0)+'00萬':v+'萬');
+const bOpts=m=>({
+ responsive:true,maintainAspectRatio:false,
+ plugins:{legend:{display:false},tooltip,afterDatasetsDraw:0},
+ scales:{x:gridX,y:{display:false,beginAtZero:true,suggestedMax:m==='count'?230:5300}},
+ plugins_disable:1
+});
+window.b2=new Chart(b1,{type:'bar',data:{labels:MONTHS,datasets:[{data:COUNT,backgroundColor:'#5172CD',hoverBackgroundColor:'#4165C0',borderRadius:4,barPercentage:.66}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip},scales:{x:gridX,y:{display:false,beginAtZero:true,suggestedMax:230}}},
+ plugins:[labelPlugin]});
+window.b2.$fmt=fmtCount;
+document.querySelectorAll('#metricToggle button').forEach(btn=>btn.onclick=()=>{
+ document.querySelectorAll('#metricToggle button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+ const m=btn.dataset.m;
+ const isCount=m==='count';
+ window.b2.destroy();
+ window.b2=new Chart(b1,{type:isCount?'bar':'line',
+  data:{labels:MONTHS,datasets:[isCount
+   ?{data:COUNT,backgroundColor:'#5172CD',hoverBackgroundColor:'#4165C0',borderRadius:4,barPercentage:.66}
+   :{data:QTY_W,borderColor:'#4E9E92',borderWidth:2,pointRadius:3,pointBackgroundColor:'#4E9E92',fill:true,backgroundColor:'rgba(78,158,146,.12)',tension:.35}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltip,callbacks:isCount?{}:{label:c=>c.parsed.y+' 萬 pcs'}}},scales:{x:gridX,y:{display:false,beginAtZero:true,suggestedMax:isCount?230:5300}}},
+  plugins:[labelPlugin]});
+ window.b2.$fmt=isCount?fmtCount:fmtQty;
+});
+
+/* C: 月份帶狀條 */
+const strip=document.getElementById('strip');
+const maxC=Math.max(...COUNT), maxQ=Math.max(...QTY_W);
+COUNT.forEach((c,i)=>{
+ const q=QTY_W[i];
+ const row=document.createElement('div');row.className='monthrow';
+ row.innerHTML=`<span class="m">${MONTHS[i]}</span>
+  <div><div class="bar" style="width:${Math.max(2,c/maxC*100)}%"></div></div>
+  <div class="q"><span style="width:52px;text-align:right">${q>=10000?(q/10000).toFixed(1)+'億':q+'萬'}</span><div class="mini"><i style="width:${Math.max(3,q/maxQ*100)}%"></i></div></div>`;
+ strip.appendChild(row);
+});
+</script>
+</body>
+</html>

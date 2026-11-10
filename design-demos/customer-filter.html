@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>客戶篩選 UI 方向初稿 ×3</title>
+<style>
+  :root{
+    --med-cobalt:#5172CD; --teal:#4E9E92; --amber:#C68A2E; --dust:#C4574E;
+    --text-primary:#2B3445; --text-secondary:#5B667A; --text-muted:#98A2B5;
+    --bg:#F4F6FB; --panel:#FFFFFF; --border-subtle:#E4E9F2;
+    --font-main:'Outfit','Noto Sans TC',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:var(--font-main);color:var(--text-primary);padding:36px 40px 80px;max-width:1240px;margin:0 auto}
+  header h1{font-size:22px;font-weight:700;letter-spacing:.2px}
+  header p{font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.6}
+  .dir-label{margin:34px 0 4px;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--med-cobalt);font-family:var(--font-mono)}
+  .dir-desc{font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.6}
+  .stage{background:var(--panel);border:1px solid var(--border-subtle);border-radius:12px;padding:18px;min-height:120px}
+
+  /* ===== 方向 A：trigger + popover ===== */
+  .trigger{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border-subtle);background:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;box-shadow:0 1px 2px rgba(43,52,69,.04)}
+  .trigger:hover{border-color:var(--med-cobalt);color:var(--med-cobalt)}
+  .trigger .cnt{font-family:var(--font-mono);font-size:11px;background:#EDF1FB;color:var(--med-cobalt);border-radius:5px;padding:2px 7px;font-weight:700}
+  .trigger.active-filter{border-color:var(--med-cobalt);color:var(--med-cobalt)}
+  .popover{margin-top:10px;border:1px solid var(--border-subtle);border-radius:10px;background:#fff;box-shadow:0 10px 30px rgba(43,52,69,.10);width:340px;overflow:hidden}
+  .pop-search{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border-subtle)}
+  .pop-search input{border:none;outline:none;font-size:13px;flex:1;font-family:var(--font-main)}
+  .pop-list{max-height:240px;overflow-y:auto}
+  .opt{display:flex;align-items:center;gap:9px;padding:7px 12px;font-size:13px;cursor:pointer;color:var(--text-primary)}
+  .opt:hover{background:#F6F8FD}
+  .opt .box{width:15px;height:15px;border:1.5px solid #C6CFDF;border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center}
+  .opt.on .box{background:var(--med-cobalt);border-color:var(--med-cobalt)}
+  .opt.on .box::after{content:'✓';color:#fff;font-size:10px;font-weight:800}
+  .opt .n{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--text-muted)}
+  .pop-foot{display:flex;gap:8px;justify-content:space-between;padding:9px 12px;border-top:1px solid var(--border-subtle);background:#FAFBFE}
+  .mini-btn{font-size:12px;font-weight:600;border:1px solid var(--border-subtle);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--text-secondary)}
+  .mini-btn:hover{color:var(--med-cobalt);border-color:var(--med-cobalt)}
+
+  /* ===== 方向 B：摘要膠囊 ===== */
+  .cap-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .cap{display:inline-flex;align-items:center;gap:7px;border:1px solid #CDD9F3;background:#F3F6FD;color:var(--med-cobalt);font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 11px;cursor:pointer}
+  .cap b{font-family:var(--font-mono);font-size:10.5px;font-weight:700;opacity:.75}
+  .cap .x{opacity:.5;font-weight:400}.cap:hover .x{opacity:1}
+  .cap.more{background:#fff;border-style:dashed;color:var(--text-secondary)}
+  .tier2{margin-top:10px;border-top:1px dashed var(--border-subtle);padding-top:10px}
+  .tier2 .head{font-size:12px;color:var(--text-muted);font-weight:600;display:flex;gap:6px;align-items:center;cursor:pointer}
+  .compact-grid{margin-top:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px 18px;max-height:150px;overflow-y:auto}
+  .cg{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3.5px 4px;border-radius:5px;cursor:pointer;color:var(--text-secondary)}
+  .cg:hover{background:#F3F6FD;color:var(--med-cobalt)}
+  .cg .box{width:13px;height:13px;border:1.5px solid #C6CFDF;border-radius:3.5px;flex:none}
+  .cg.on{color:var(--med-cobalt);font-weight:600}
+  .cg.on .box{background:var(--med-cobalt);border-color:var(--med-cobalt)}
+  .cg.on .box::after{content:'✓';color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;height:100%;font-weight:800}
+  .cg .n{margin-left:auto;font-family:var(--font-mono);font-size:10.5px;color:var(--text-muted)}
+
+  /* ===== 方向 C：側欄清單 ===== */
+  .sidebar{display:flex;gap:16px}
+  .side{width:300px;flex:none;border:1px solid var(--border-subtle);border-radius:10px;background:#fff;display:flex;flex-direction:column}
+  .side .search{margin:10px;border:1px solid var(--border-subtle);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text-muted)}
+  .side .list{flex:1;max-height:230px;overflow-y:auto;padding:0 6px}
+  .row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;font-size:13px;cursor:pointer}
+  .row:hover{background:#F6F8FD}
+  .row .box{width:14px;height:14px;border:1.5px solid #C6CFDF;border-radius:4px;flex:none}
+  .row.on .box{background:var(--med-cobalt);border-color:var(--med-cobalt)}
+  .row.on .box::after{content:'✓';color:#fff;font-size:9px;display:flex;justify-content:center;font-weight:800}
+  .row .bar{margin-left:auto;width:64px;height:5px;background:#EDF1F7;border-radius:3px;overflow:hidden;flex:none}
+  .row .bar i{display:block;height:100%;background:var(--med-cobalt);border-radius:3px}
+  .row .n{width:44px;text-align:right;font-family:var(--font-mono);font-size:10.5px;color:var(--text-muted);flex:none}
+  .side-foot{border-top:1px solid var(--border-subtle);padding:8px 12px;font-size:11.5px;color:var(--text-secondary);display:flex;justify-content:space-between;background:#FAFBFE}
+  .side-foot b{color:var(--med-cobalt);font-family:var(--font-mono)}
+  .demo-result{flex:1;border:1px dashed var(--border-subtle);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;min-height:200px;text-align:center;line-height:1.7}
+  .note{font-size:12px;color:var(--text-muted);margin-top:10px;font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+<header>
+  <h1>客戶篩選 · 三個 UI 方向初稿</h1>
+  <p>素材取自真實資料前 12 名客戶與訂單筆數（ICU 1,022 筆為最大宗）。三案皆可點擊互動，感受實際操作手感；選定後我再把獲選方案實作進 STAGE 04。</p>
+</header>
+
+<!-- ═══════════ 方向 A ═══════════ -->
+<div class="dir-label">方向 A · 篩選按鈕 + 搜尋彈出層</div>
+<div class="dir-desc">一顆按鈕代表整個篩選器；點開才見 44 家清單，帶搜尋框與筆數。與階段 01 表格欄位篩選同一套互動語言，全域一致、零學習成本。</div>
+<div class="stage">
+  <div class="trigger active-filter" onclick="this.parentElement.querySelector('.popover').style.display = this.parentElement.querySelector('.popover').style.display==='none'?'block':'none'">
+    ⚊ 客戶篩選 <span class="cnt">已選 3 / 44</span> <span style="font-size:10px">▾</span>
+  </div>
+  <div class="popover">
+    <div class="pop-search">🔍<input placeholder="搜尋客戶名…" value="Qos"></div>
+    <div class="pop-list">
+      <div class="opt on"><span class="box"></span>Qosina<span class="n">74</span></div>
+      <div class="opt on"><span class="box"></span>Qosina (Jiangxi Sanxin Medtec Co)<span class="n">2</span></div>
+      <div class="opt on"><span class="box"></span>Quatramed<span class="n">3</span></div>
+    </div>
+    <div class="pop-foot"><button class="mini-btn">全選</button><span style="font-size:12px;color:var(--text-muted);align-self:center;font-family:var(--font-mono)">3 / 44 已選</span><button class="mini-btn">清除</button></div>
+  </div>
+  <div class="note">特點：關閉時只佔一顆按鈕的寬度；搜尋 + 全選/清除 + 每家筆數一目了然。關閉狀態下圖表區零噪音。</div>
+</div>
+
+<!-- ═══════════ 方向 B ═══════════ -->
+<div class="dir-label">方向 B · 摘要膠囊 + 分層抽屜</div>
+<div class="dir-desc">保留「膠囊」手感但控制數量：已選的是實心膠囊（可點 × 移除）；未選的依筆數排序，前 8 名可見，其餘收進「其他 36 家」抽屜。</div>
+<div class="stage">
+  <div class="cap-row">
+    <div class="cap">ICU <b>1,022</b><span class="x">×</span></div>
+    <div class="cap">Ecomcd <b>20</b><span class="x">×</span></div>
+    <div class="cap">長安 <b>8</b><span class="x">×</span></div>
+    <div class="cap" style="background:#EDF1FB">Qosina <b>74</b></div>
+    <div class="cap" style="background:#EDF1FB">BLLS <b>39</b></div>
+    <div class="cap" style="background:#EDF1FB">CAIR LGL <b>22</b></div>
+    <div class="cap" style="background:#EDF1FB">Directmed <b>18</b></div>
+    <div class="cap" style="background:#EDF1FB">Command <b>17</b></div>
+    <div class="cap" style="background:#EDF1FB">Amsino Medical <b>17</b></div>
+  </div>
+  <div class="tier2">
+    <div class="head">▸ 其他 36 家（137 筆訂單）</div>
+    <div class="compact-grid">
+      <div class="cg on"><span class="box"></span>8083851 Canada<span class="n">7</span></div>
+      <div class="cg on"><span class="box"></span>Meditrade<span class="n">6</span></div>
+      <div class="cg on"><span class="box"></span>吉生<span class="n">5</span></div>
+      <div class="cg"><span class="box"></span>Unimedics<span class="n">4</span></div>
+      <div class="cg"><span class="box"></span>愷得<span class="n">4</span></div>
+      <div class="cg"><span class="box"></span>PFM Medical<span class="n">3</span></div>
+      <div class="cg"><span class="box"></span>Biometrix<span class="n">3</span></div>
+      <div class="cg"><span class="box"></span>予仁<span class="n">3</span></div>
+      <div class="cg"><span class="box"></span>Ace Cathtech<span class="n">2</span></div>
+      <div class="cg"><span class="box"></span>BD<span class="n">2</span></div>
+      <div class="cg"><span class="box"></span>KORU Medical<span class="n">2</span></div>
+      <div class="cg"><span class="box"></span>怡安<span class="n">2</span></div>
+    </div>
+  </div>
+  <div class="note">特點：選了什麼永遠直接可見（最適合切換湊組合的用法）；分層讓 44 家只佔兩行高度。</div>
+</div>
+
+<!-- ═══════════ 方向 C ═══════════ -->
+<div class="dir-label">方向 C · 客戶側欄（常駐清單 + 覆蓋率）</div>
+<div class="dir-desc">仿階段 03 的 QMS 側欄：常駐清單含搜尋、勾選、筆數橫條（長度=訂單量），底部即時顯示覆蓋率。最資訊密集、最適合按著 Ctrl 對帳的日常工作流。</div>
+<div class="stage">
+  <div class="sidebar">
+    <div class="side">
+      <div class="search">🔍 搜尋客戶…</div>
+      <div class="list">
+        <div class="row on"><span class="box"></span>ICU<span class="bar"><i style="width:100%"></i></span><span class="n">1,022</span></div>
+        <div class="row on"><span class="box"></span>Qosina<span class="bar"><i style="width:14%"></i></span><span class="n">74</span></div>
+        <div class="row"><span class="box"></span>BLLS<span class="bar"><i style="width:10%"></i></span><span class="n">39</span></div>
+        <div class="row"><span class="box"></span>CAIR LGL<span class="bar"><i style="width:8%"></i></span><span class="n">22</span></div>
+        <div class="row on"><span class="box"></span>Ecomcd<span class="bar"><i style="width:7%"></i></span><span class="n">20</span></div>
+        <div class="row"><span class="box"></span>Directmed<span class="bar"><i style="width:7%"></i></span><span class="n">18</span></div>
+        <div class="row"><span class="box"></span>Command<span class="bar"><i style="width:6%"></i></span><span class="n">17</span></div>
+        <div class="row"><span class="box"></span>Amsino Medical<span class="bar"><i style="width:6%"></i></span><span class="n">17</span></div>
+        <div class="row"><span class="box"></span>長安<span class="bar"><i style="width:5%"></i></span><span class="n">8</span></div>
+      </div>
+      <div class="side-foot"><span>已選 <b>3 / 44</b></span><span>覆蓋 <b>1,116 筆 · 84%</b></span></div>
+    </div>
+    <div class="demo-result">右側圖表區<br>（此示意側欄與圖表並排常駐）</div>
+  </div>
+  <div class="note">特點：筆數橫條讓「ICU 一家獨大」的結構一眼可讀；覆蓋率條是只有這份資料才長得出的細節。代價：常駐佔一欄空間。</div>
+</div>
+
+</body>
+</html>

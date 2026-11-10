@@ -217,6 +217,8 @@ function App() {
   const [orderStatus, setOrderStatus] = useState("all");    // all | done | pending | overdue
   const [orderSearch, setOrderSearch] = useState("");       // 品名 / 訂單號搜尋
   const [orderCustomerMetric, setOrderCustomerMetric] = useState("qty"); // qty | count
+  const [orderTrendMetric, setOrderTrendMetric] = useState("count"); // 方向B：count | qty
+  const [orderCustomerSearch, setOrderCustomerSearch] = useState(""); // 方向C：側欄客戶搜尋（僅縮列表，不縮資料）
 
   // Modals & UI States
   const [showMappingsModal, setShowMappingsModal] = useState(false);
@@ -1071,6 +1073,25 @@ function App() {
     return orderCustomers.filter(name => available.has(name));
   }, [orderCustomers, orderCustomerList]);
 
+  // 方向 C 側欄：各家筆數 + 最大值（橫條比例基準）
+  const orderCustomerStats = useMemo(() => {
+    const counts = {};
+    orderAllRows.forEach(r => { counts[r.customer] = (counts[r.customer] || 0) + 1; });
+    const maxCount = Object.values(counts).reduce((a, b) => Math.max(a, b), 1);
+    return { counts, maxCount };
+  }, [orderAllRows]);
+
+  // 方向 C 側欄底部：即時覆蓋率（以年度篩選後全部訂單為分母）
+  const orderCoverage = useMemo(() => {
+    const sel = new Set(orderEffectiveCustomers);
+    let covered = 0;
+    orderAllRows.forEach(r => { if (sel.has(r.customer)) covered++; });
+    return {
+      covered,
+      pct: orderAllRows.length > 0 ? Math.round((covered / orderAllRows.length) * 100) : 0,
+    };
+  }, [orderAllRows, orderEffectiveCustomers]);
+
   const orderFilteredRows = useMemo(() => {
     const custSet = new Set(orderEffectiveCustomers);
     const q = orderSearch.trim().toLowerCase();
@@ -1108,47 +1129,46 @@ function App() {
     const rows = orderFilteredRows;
     const monthOf = (r) => parseInt(r.originalDue.slice(5, 7), 10) - 1;
 
-    // 1. 月份趨勢（年度=all 時逐年堆疊；單年度時 訂單數 + 數量雙軸）
-    const trendYears = (orderData && orderYear === "all") ? Object.keys(orderData.years).sort() : [];
-    let trend;
-    if (trendYears.length > 1) {
-      trend = {
-        labels: MONTH_LABELS,
-        datasets: trendYears.map((y, i) => {
-          const yrRows = rows.filter(r => r.year === y);
-          return {
-            label: `${y} 年 訂單數`,
-            data: MONTH_LABELS.map((_, mi) => yrRows.filter(r => monthOf(r) === mi).length),
-            backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length],
-            borderRadius: 2,
-          };
-        }),
-      };
-    } else {
-      trend = {
-        labels: MONTH_LABELS,
-        datasets: [
-          {
-            label: '訂單數',
-            data: MONTH_LABELS.map((_, mi) => rows.filter(r => monthOf(r) === mi).length),
-            backgroundColor: CHART_PALETTE[0],
-            borderRadius: 2,
-            yAxisID: 'y1',
-          },
-          {
-            label: '數量 (pcs)',
-            type: 'line',
-            data: MONTH_LABELS.map((_, mi) => rows.filter(r => monthOf(r) === mi).reduce((a, r) => a + (r.qty || 0), 0)),
-            borderColor: CHART_PALETTE[1],
-            backgroundColor: CHART_PALETTE[1],
-            tension: 0.3,
-            borderWidth: 2,
-            pointRadius: 2,
-            yAxisID: 'y2',
-          },
-        ],
-      };
-    }
+    // 1. 月份趨勢（方向 B：單一量綱＋右上切換；無雙軸。qty 以「萬 pcs」為單位）
+    const isTrendCount = orderTrendMetric === 'count';
+    const monthCounts = MONTH_LABELS.map((_, mi) => rows.filter(r => monthOf(r) === mi).length);
+    const monthQtyW = MONTH_LABELS.map((_, mi) =>
+      Math.round((rows.filter(r => monthOf(r) === mi).reduce((a, r) => a + (r.qty || 0), 0) / 10000) * 10) / 10
+    );
+    const fmtQtyLabel = (v) => (v >= 10000 ? `${(v / 10000).toFixed(1)}億` : `${v.toLocaleString()}萬`);
+    const trendData = isTrendCount ? monthCounts : monthQtyW;
+    const trendMax = Math.max(...trendData, 1);
+    const trend = {
+      labels: MONTH_LABELS,
+      trendMax,
+      datasets: [
+        isTrendCount
+          ? {
+              type: 'bar',
+              label: '訂單數',
+              data: monthCounts,
+              rawLabels: monthCounts.map(v => String(v)),
+              backgroundColor: CHART_PALETTE[0],
+              hoverBackgroundColor: '#4165C0',
+              borderRadius: 4,
+              barPercentage: 0.66,
+              categoryPercentage: 0.85,
+            }
+          : {
+              type: 'line',
+              label: '數量 (萬 pcs)',
+              data: monthQtyW,
+              rawLabels: monthQtyW.map(fmtQtyLabel),
+              borderColor: CHART_PALETTE[1],
+              backgroundColor: 'rgba(78,158,146,.10)',
+              borderWidth: 2,
+              pointRadius: 2.5,
+              pointBackgroundColor: CHART_PALETTE[1],
+              fill: true,
+              tension: 0.35,
+            },
+      ],
+    };
 
     // 2. 客戶 Top10（metric 可切換 數量 / 訂單數）
     const custAgg = {};
@@ -1259,7 +1279,7 @@ function App() {
     };
 
     return { trend, customerChart, productChart, stackChart, delayChart, statusChart, reviseChart };
-  }, [orderFilteredRows, orderData, orderYear, orderCustomerMetric]);
+  }, [orderFilteredRows, orderCustomerMetric, orderTrendMetric]);
 
   const handleOpenLLMModal = () => {
     let filesForLLM = { ...summaryFiles };
@@ -2191,7 +2211,71 @@ function App() {
               </p>
             </div>
           ) : (
-            <>
+            <div className="dashboard-layout">
+              {/* 方向 C：客戶側欄（搜尋、勾選、筆數橫條、即時覆蓋率） */}
+              <aside className="sheet-sidebar" style={{ padding: '14px 10px', gap: '0', alignSelf: 'flex-start', position: 'sticky', top: '16px', maxHeight: 'calc(100vh - 32px)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 6px 10px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.6px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>客戶 ({orderCustomerList.length})</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button className="btn btn-secondary btn-sm" style={{ padding: '2px 9px', fontSize: '12px' }} onClick={() => setOrderCustomers(null)}>全選</button>
+                    <button className="btn btn-secondary btn-sm" style={{ padding: '2px 9px', fontSize: '12px' }} onClick={() => setOrderCustomers([])}>清空</button>
+                  </div>
+                </div>
+                <input
+                  className="filter-select"
+                  type="text"
+                  placeholder="搜尋客戶…"
+                  value={orderCustomerSearch}
+                  onChange={(e) => setOrderCustomerSearch(e.target.value)}
+                  style={{ fontSize: '12px', padding: '6px 10px', marginBottom: '6px' }}
+                />
+                <div style={{ flex: 1, maxHeight: 'calc(100vh - 180px)', overflowY: 'auto', padding: '0 2px' }}>
+                  {orderCustomerList
+                    .filter(name => name.toLowerCase().includes(orderCustomerSearch.trim().toLowerCase()))
+                    .map((name) => {
+                      const active = orderEffectiveCustomers.includes(name);
+                      const count = orderCustomerStats.counts[name] || 0;
+                      return (
+                        <div
+                          key={name}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '8px', padding: '5.5px 8px',
+                            borderRadius: '8px', cursor: 'pointer',
+                            background: active ? 'rgba(255,255,255,0.65)' : 'transparent',
+                          }}
+                          onClick={() => {
+                            if (active) setOrderCustomers(orderEffectiveCustomers.filter(c => c !== name));
+                            else setOrderCustomers([...orderEffectiveCustomers, name]);
+                          }}
+                        >
+                          <span style={{
+                            width: '14px', height: '14px', borderRadius: '4px', flex: 'none',
+                            border: active ? 'none' : '1.5px solid #C6CFDF',
+                            background: active ? 'var(--med-cobalt)' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontSize: '9px', fontWeight: 800,
+                          }}>{active ? '✓' : ''}</span>
+                          <span style={{
+                            fontSize: '12.5px', fontWeight: active ? 700 : 500,
+                            color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          }}>{name}</span>
+                          <span style={{ marginLeft: 'auto', width: '46px', height: '4px', background: '#E4E9F2', borderRadius: '2px', flex: 'none', overflow: 'hidden' }}>
+                            <span style={{ display: 'block', height: '100%', width: `${Math.max(3, (count / orderCustomerStats.maxCount) * 100)}%`, background: active ? 'var(--med-cobalt)' : '#C0CBDF', borderRadius: '2px' }}></span>
+                          </span>
+                          <span style={{ width: '42px', textAlign: 'right', fontSize: '10.5px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', flex: 'none' }}>{count.toLocaleString()}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '8px', paddingTop: '9px', fontSize: '11.5px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)' }}>
+                  <span>已選 <b style={{ color: 'var(--med-cobalt)' }}>{orderEffectiveCustomers.length}/{orderCustomerList.length}</b></span>
+                  <span>覆蓋 <b style={{ color: 'var(--med-cobalt)' }}>{orderCoverage.covered.toLocaleString()}</b> 筆 · {orderCoverage.pct}%</span>
+                </div>
+              </aside>
+
+              {/* 主分析欄 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0 }}>
               {/* KPI Cards */}
               <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                 <div className="kpi-card">
@@ -2220,58 +2304,37 @@ function App() {
                 </div>
               </div>
 
-              {/* Customer Filter Pills */}
-              <div className="panel-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>客戶篩選（{orderCustomerList.length} 家）</h3>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>勾選客戶以聚焦下述所有圖表之資料範圍</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setOrderCustomers(null)}>全選</button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setOrderCustomers([])}>清空</button>
-                  </div>
-                </div>
-                <div className="pills-container" style={orderCustomerList.length > 24 ? { maxHeight: '104px', overflowY: 'auto' } : undefined}>
-                  {orderCustomerList.map((name) => {
-                    const active = orderEffectiveCustomers.includes(name);
-                    return (
-                      <div
-                        key={name}
-                        className={`pill-item ${active ? 'active' : ''}`}
-                        onClick={() => {
-                          if (active) setOrderCustomers(orderEffectiveCustomers.filter(c => c !== name));
-                          else setOrderCustomers([...orderEffectiveCustomers, name]);
-                        }}
-                      >
-                        <span className="pill-check"></span>
-                        <span>{name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Monthly Trend (full width) */}
+              {/* Monthly Trend (full width · 方向 B：單一量綱＋切換) */}
               <div className="panel-card">
                 <div className="panel-header">
                   <h3 className="panel-title">
                     <Icons.Chart />
-                    <span>月份訂單趨勢 {orderYear !== 'all' ? `· ${orderYear} 年` : '（各年度堆疊）'}</span>
+                    <span>月份訂單趨勢 {orderYear !== 'all' ? `· ${orderYear} 年` : '· 全部年度'}</span>
                   </h3>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>依「原始訂單交期」月份歸類</span>
+                  <div style={{ display: 'inline-flex', border: '1px solid var(--border-subtle)', borderRadius: '8px', overflow: 'hidden' }}>
+                    {[['count', '訂單數'], ['qty', '數量 (萬 pcs)']].map(([m, label]) => (
+                      <button
+                        key={m}
+                        className={`btn btn-sm ${orderTrendMetric === m ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ border: 'none', borderRadius: 0, fontSize: '12px' }}
+                        onClick={() => setOrderTrendMetric(m)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="chart-card">
                   <OrderChart
-                    type="bar"
+                    type={orderTrendMetric === 'count' ? 'bar' : 'line'}
                     chart={orderChartData.trend}
-                    options={trendOptions(orderYear === 'all' && Object.keys(orderData.years).length > 1)}
+                    options={trendOptionsB(orderTrendMetric, orderChartData.trend && orderChartData.trend.trendMax)}
                   />
                 </div>
               </div>
 
               {/* 2x Grid of Dimension Charts */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '14px' }}>
+              <div className="order-chart-grid">
                 <div className="panel-card">
                   <div className="panel-header">
                     <h3 className="panel-title"><Icons.Chart /><span>客戶 Top 10</span></h3>
@@ -2382,7 +2445,8 @@ function App() {
                   </div>
                 )}
               </div>
-            </>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -2558,19 +2622,52 @@ const ORDER_CHART_BASE = {
   }
 };
 
-const trendOptions = (stackedYears) => ({
-  ...ORDER_CHART_BASE,
-  scales: stackedYears
-    ? {
-        x: { stacked: true, grid: { display: false }, ticks: { color: '#7A8394', font: { family: 'Outfit, sans-serif', size: 11 } } },
-        y1: { stacked: true, beginAtZero: true, grid: { color: '#E1E5EC', borderDash: [2, 2] }, ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
-      }
-    : {
-        x: { grid: { display: false }, ticks: { color: '#7A8394', font: { family: 'Outfit, sans-serif', size: 11 } } },
-        y1: { position: 'left', beginAtZero: true, grid: { color: '#E1E5EC', borderDash: [2, 2] }, ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
-        y2: { position: 'right', beginAtZero: true, grid: { display: false }, ticks: { color: '#4E9E92', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
-      },
+// 方向 B：月份趨勢 —— 單一量綱、Y 軸隱藏、無雙軸；柱體/點位上方由 plugin 標註數值
+const trendOptionsB = (metric, suggestedMax) => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      padding: 10,
+      backgroundColor: '#2B3445',
+      titleFont: { family: 'Outfit, sans-serif', weight: 'bold', size: 12 },
+      bodyFont: { family: 'JetBrains Mono, monospace', size: 11 },
+    },
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: '#8B94A8', font: { family: 'JetBrains Mono, monospace', size: 10.5 } },
+    },
+    y: {
+      display: false,
+      beginAtZero: true,
+      suggestedMax: Math.ceil((suggestedMax || 100) * 1.22),
+    },
+  },
 });
+
+// 柱體上方數值標籤（資料經 dataset.rawLabels 傳遞，保持 OrderChart 的序列化 spec 兼容）
+const orderValueLabelPlugin = {
+  id: 'orderValueLabels',
+  afterDatasetsDraw(chart) {
+    if (chart.config.type !== 'bar') return;
+    const ds = chart.data.datasets[0];
+    const labels = ds && ds.rawLabels;
+    const meta = chart.getDatasetMeta(0);
+    if (!labels || !meta || meta.data.length === 0) return;
+    const { ctx } = chart;
+    ctx.save();
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillStyle = '#7A8394';
+    ctx.textAlign = 'center';
+    meta.data.forEach((bar, i) => {
+      if (labels[i] !== undefined) ctx.fillText(labels[i], bar.x, bar.y - 6);
+    });
+    ctx.restore();
+  },
+};
 
 const hbarOptions = () => ({
   ...ORDER_CHART_BASE,
@@ -2641,6 +2738,7 @@ const OrderChart = ({ type, chart, options, height = 300 }) => {
       type,
       data: { labels: specObj.labels, datasets: specObj.datasets },
       options: specObj.options,
+      plugins: [orderValueLabelPlugin],
     });
     return () => {
       if (inst.current) {
