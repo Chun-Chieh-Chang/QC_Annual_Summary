@@ -1,5 +1,23 @@
 # 開發日誌 (DEV_LOG.md)
 
+## 2026-11-10 LLM 診斷指令導入 ASD-STE100 受控語言撰寫規範
+
+### 需求說明
+1. 使用者提供 [JAICHANGPARK/ASD-STE100](https://github.com/JAICHANGPARK/ASD-STE100)（MIT 授權）：ASD-STE100 簡化技術英語 Issue 9 規範工具包（規則引擎 + Karpathy 80% 模式），要求整合進本專案系統。
+
+### 重點改善選項 (CAPA)
+1. **`src/utils/llmExport.js`**：`generateMultiYearLLMPrompt` 新增「回報撰寫規範」章節（## 0），要求接收數據包之 LLM 以 ASD-STE100 Issue 9 80% 實用模式撰寫稽核分析報告：
+   - 短句（指令 ≤20 詞 / 描述 ≤25 詞）、一句一概念、段落 ≤6 句
+   - 主動語態、動作者寫明；must/can 取代 shall/should/could/might
+   - 核可詞彙（use/start/stop/before）、名詞堆疊 ≤3、禁分號與拉丁縮寫
+   - WARNING/CAUTION/NOTE 三級警示（先命令後風險）、航太維護手冊式章節編號
+   - 80% 模式附加：Mermaid 圖表佐證；所有結論附數據出處（可追溯性）
+   - 中文輸出同樣適用（規範按語言套用，與原 repo STE pane 行為一致）
+2. JSON payload metadata 新增 `writingStandard` 欄位，機器可讀層同步攜帶標準資訊。
+3. 選此落點之理由：本專案不產出英文技術文件，唯一以「文字品質」為核心的出口即 LLM 診斷指令——讓大模型報告（CAPA、缺漏分析）符合受控語言，可直接用於 ISO 13485 管理審查簽核。
+
+---
+
 ## 2026-11-10 STAGE 04 客戶側欄窄屏重疊修正
 
 ### 需求說明

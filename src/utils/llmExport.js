@@ -149,6 +149,19 @@ export function generateMultiYearLLMPrompt(summaryFiles) {
   md += `5. **CAPA 矯正與預防措施建議 (Actionable ISO 13485 CAPA Roadmap)**：\n`;
   md += `   - 提出可落地之具體矯正與預防措施 (CAPA)，涵蓋檢驗規範優化、防呆措施 (Poka-Yoke)、首件檢驗確效 (First Article Inspection) 及品檢自動化路徑。\n\n`;
 
+  md += `## 0. 回報撰寫規範 (ASD-STE100 Issue 9 · Karpathy 80% Pragmatic Mode)\n\n`;
+  md += `你的報告必須以 **ASD-STE100 簡化技術英語 (Simplified Technical English, Issue 9, 2025) 之 80% 實用模式** 撰寫。此規範源自航太維護手冊之受控語言，目的：降低閱讀負荷、消除歧義、加速管理審查簽核。規則適用於報告全文（中文或英文輸出皆適用）。摘錄規則如下：\n\n`;
+  md += `1. **句子 (Sentence)**：一句只表達一個概念。指令句 ≤20 詞，描述句 ≤25 詞。段落一個主題，最多 6 句。\n`;
+  md += `2. **語態 (Voice)**：主動語態。動作者必須寫明（誰檢驗、誰批准、誰複核）。程序步驟用祈使句。\n`;
+  md += `3. **助動詞 (Modal Verbs)**：以 must / can 取代 shall / should / could / might。強制需求寫 must；選擇性作法寫 can 或寫明確條件。\n`;
+  md += `4. **詞彙 (Approved Vocabulary)**：簡單動詞優先——use（不用 utilize）、before（不用 prior to）、start（不用 commence）、stop（不用 terminate）。技術名詞（CAPA、Cpk、Poka-Yoke、ISO 13485）可保留。\n`;
+  md += `5. **名詞堆疊 (Noun Clusters)**：連續名詞最多 3 個。超過時以介系詞拆開（例：「完成品零組件入庫檢驗」→「零組件入庫之完成品檢驗」）。\n`;
+  md += `6. **標點 (Punctuation)**：不用分號。不用縮寫撇號（don't → do not）。不用拉丁縮寫（e.g. / i.e. / etc. → 例如 / 即 / 其他）。\n`;
+  md += `7. **警示結構 (Safety)**：WARNING / CAUTION / NOTE 三級。警示句先下命令，再說明風險。例：「更換治具前停機。未停機將造成夾傷風險。」\n`;
+  md += `8. **文件結構 (Structure)**：章節編號 1. 2.，句子編號 A. B.，步驟編號 (1) (2)，航太維護手冊式排版。表格優先於長段文字；一個表格一個主題。\n`;
+  md += `9. **圖表佐證 (Diagram Modality · 80% 模式附加)**：趨勢、漏斗與負載分析請搭配 Mermaid 圖（flowchart / sequence / XY chart），一圖一訊息，圖前一句話說明圖旨。\n`;
+  md += `10. **量化佐證 (Data Traceability)**：所有結論必須附數據出處（年度 + 階段 + 月份，或 JSON 欄位名）。禁止無數據之推測句。違反本規範之句子必須改寫後才可發行。\n\n`;
+
   md += `---\n\n`;
 
   // 2. Multi-Year High-level Summary Table
@@ -216,6 +229,7 @@ export function generateMultiYearLLMPrompt(summaryFiles) {
   md += JSON.stringify({
     metadata: {
       standard: "ISO 13485:2016 & GMP Compliant Format",
+      writingStandard: "ASD-STE100 Issue 9 · Karpathy 80% Pragmatic Mode",
       generator: "Mouldex Medical Device QMS Pipeline v2026",
       generatedAt: new Date().toISOString(),
       coveredYears: years,
