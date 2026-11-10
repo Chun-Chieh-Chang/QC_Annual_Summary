@@ -813,6 +813,14 @@ function App() {
     e.target.value = null;
   };
 
+  // 取得某年度資料表中「細項名稱」的欄位索引。
+  // 各年度表頭欄位順序可能不同（例：2026 新增 ICU 欄使「射出」位移），
+  // 跨年度運算必須逐年以名稱重新索引，不得沿用單一 idx。
+  const resolveItemIdx = (yrRows, name) => {
+    if (!yrRows || yrRows.length < 2) return -1;
+    return (yrRows[1] || []).map(h => String(h || '').trim()).indexOf(name);
+  };
+
   // Derived Dashboard Insights calculation via useMemo
   const dashboardInsights = useMemo(() => {
     if (!summaryData || !activeSheet || effectiveSelectedItems.length === 0) {
@@ -826,6 +834,15 @@ function App() {
       ? selectedCompareYears
       : (activeYear === 'compare' ? allYears : [activeYear]);
 
+    // 逐年解析細項欄位索引（避免跨年度欄位錯位）
+    const itemIdxByYear = {};
+    yearsToAggregate.forEach(yr => {
+      const yrRows = summaryFiles[yr] ? summaryFiles[yr][activeSheet] : null;
+      if (!yrRows) return;
+      const header = (yrRows[1] || []).map(h => String(h || '').trim());
+      itemIdxByYear[yr] = effectiveSelectedItems.map(item => header.indexOf(item.name));
+    });
+
     let totalSum = 0;
     let peakValue = 0;
     let peakM = "";
@@ -835,10 +852,12 @@ function App() {
       let monthlySum = 0;
 
       yearsToAggregate.forEach(yr => {
+        const idxs = itemIdxByYear[yr];
         const yrRows = summaryFiles[yr] ? summaryFiles[yr][activeSheet] : null;
-        if (!yrRows) return;
-        effectiveSelectedItems.forEach(item => {
-          const val = yrRows[m + 2] ? Number(yrRows[m + 2][item.idx]) || 0 : 0;
+        if (!yrRows || !idxs) return;
+        idxs.forEach(idx => {
+          if (idx === -1) return; // 該年度無此細項
+          const val = yrRows[m + 2] ? Number(yrRows[m + 2][idx]) || 0 : 0;
           monthlySum += val;
         });
       });
@@ -875,34 +894,41 @@ function App() {
 
     let datasets;
     if (activeYear === 'compare' && years.length > 1) {
-      datasets = effectiveSelectedItems.map((item, idx) => {
+      datasets = effectiveSelectedItems.map((item, seriesIdx) => {
         const dataPoints = years.map(yr => {
           const yrRows = summaryFiles[yr] ? summaryFiles[yr][activeSheet] : null;
           if (!yrRows) return 0;
+          const colIdx = resolveItemIdx(yrRows, item.name);
+          if (colIdx === -1) return 0; // 該年度無此細項
           if (selectedMonth > 0 && selectedMonth <= 12) {
             const mRow = yrRows[selectedMonth + 1];
-            return mRow ? Number(mRow[item.idx]) || 0 : 0;
+            return mRow ? Number(mRow[colIdx]) || 0 : 0;
           }
           const totalRow = yrRows[14];
-          return totalRow ? Number(totalRow[item.idx]) || 0 : 0;
+          return totalRow ? Number(totalRow[colIdx]) || 0 : 0;
         });
 
         return {
           label: item.name,
           data: dataPoints,
-          backgroundColor: CHART_PALETTE[idx % CHART_PALETTE.length],
+          backgroundColor: CHART_PALETTE[seriesIdx % CHART_PALETTE.length],
           borderRadius: 2,
         };
       });
     } else {
+      // 單一年度視圖（跨年度對比僅勾選 1 個年度時，以該勾選年度為準）
+      const singleRows = (activeYear === 'compare' && years.length === 1)
+        ? (summaryFiles[years[0]] ? summaryFiles[years[0]][activeSheet] : rows)
+        : rows;
       datasets = effectiveSelectedItems.map((item, idx) => {
         const dataPoints = [];
+        const colIdx = resolveItemIdx(singleRows, item.name);
         for (let m = 2; m <= 13; m++) {
           if (selectedMonth > 0 && m - 1 !== selectedMonth) {
             dataPoints.push(0);
             continue;
           }
-          const val = rows[m] ? Number(rows[m][item.idx]) || 0 : 0;
+          const val = (colIdx !== -1 && singleRows[m]) ? Number(singleRows[m][colIdx]) || 0 : 0;
           dataPoints.push(val);
         }
 
