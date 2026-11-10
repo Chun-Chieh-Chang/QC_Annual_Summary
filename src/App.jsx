@@ -203,7 +203,7 @@ function App() {
   const [summaryFiles, setSummaryFiles] = useState({});
   const [activeYear, setActiveYear] = useState("2025");
   const [activeSheet, setActiveSheet] = useState("");
-  const [selectedNames, setSelectedNames] = useState([]);
+  const [selectedNames, setSelectedNames] = useState(null); // null = 預設全選；陣列 = 自訂選取；[] = 已清空
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [compareYearSelection, setCompareYearSelection] = useState({});
 
@@ -249,10 +249,11 @@ function App() {
     return items;
   }, [activeSheet, summaryData]);
 
-  // 有效選取項目：選取狀態以「名稱」為鍵，切換年度時自動映射到該年金鑰年份的欄位，
+  // 選取狀態改以「名稱」為鍵，切換年度時自動映射到該年的欄位，
   // 避免跨年度欄位順序不同時（例：2026 新增 ICU 欄）誤讀相鄰細項。
+  // null = 未曾自訂（預設「全選」）；[] = 已明確清空（真清空，不退回預設）。
   const effectiveSelectedItems = useMemo(() => {
-    if (selectedNames.length === 0) return availableItems.slice(0, 4);
+    if (selectedNames === null) return availableItems;
     const byName = new Map(availableItems.map(item => [item.name, item]));
     return selectedNames.map(name => byName.get(name)).filter(Boolean);
   }, [selectedNames, availableItems]);
@@ -881,7 +882,15 @@ function App() {
 
   // Chart Rendering
   useEffect(() => {
-    if (!chartRef.current || !summaryData || !activeSheet || effectiveSelectedItems.length === 0) return;
+    if (!chartRef.current || !summaryData || !activeSheet) return;
+    // 真清空（選取為空）：銷毀圖表，不留殘影
+    if (effectiveSelectedItems.length === 0) {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+        chartInstance.current = null;
+      }
+      return;
+    }
     const ctx = chartRef.current.getContext('2d');
     const rows = summaryData[activeSheet];
     if (!rows || rows.length < 2) return;
@@ -1735,7 +1744,7 @@ function App() {
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button 
                           className="btn btn-secondary btn-sm"
-                          onClick={() => setSelectedNames(availableItems.map(i => i.name))}
+                          onClick={() => setSelectedNames(null)}
                         >
                           全選
                         </button>
