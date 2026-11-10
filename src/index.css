@@ -1157,3 +1157,26 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* STAGE 04: 客戶側欄 sticky 跟隨捲動；單欄模式（≤1024px）解除，避免釘住遮住主欄圖表 */
+.order-customer-sidebar {
+  align-self: flex-start;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+}
+
+.order-customer-sidebar .order-customer-list {
+  max-height: calc(100vh - 180px);
+}
+
+@media (max-width: 1024px) {
+  .order-customer-sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  .order-customer-sidebar .order-customer-list {
+    max-height: 320px;
+  }
+}

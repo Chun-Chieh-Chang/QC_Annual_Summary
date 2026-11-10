@@ -2213,7 +2213,7 @@ function App() {
           ) : (
             <div className="dashboard-layout">
               {/* 方向 C：客戶側欄（搜尋、勾選、筆數橫條、即時覆蓋率） */}
-              <aside className="sheet-sidebar" style={{ padding: '14px 10px', gap: '0', alignSelf: 'flex-start', position: 'sticky', top: '16px', maxHeight: 'calc(100vh - 32px)' }}>
+              <aside className="sheet-sidebar order-customer-sidebar" style={{ padding: '14px 10px', gap: '0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 6px 10px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.6px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>客戶 ({orderCustomerList.length})</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
@@ -2229,7 +2229,7 @@ function App() {
                   onChange={(e) => setOrderCustomerSearch(e.target.value)}
                   style={{ fontSize: '12px', padding: '6px 10px', marginBottom: '6px' }}
                 />
-                <div style={{ flex: 1, maxHeight: 'calc(100vh - 180px)', overflowY: 'auto', padding: '0 2px' }}>
+                <div className="order-customer-list" style={{ flex: 1, overflowY: 'auto', padding: '0 2px' }}>
                   {orderCustomerList
                     .filter(name => name.toLowerCase().includes(orderCustomerSearch.trim().toLowerCase()))
                     .map((name) => {

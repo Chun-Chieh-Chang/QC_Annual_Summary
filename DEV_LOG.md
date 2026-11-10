@@ -1,5 +1,15 @@
 # 開發日誌 (DEV_LOG.md)
 
+## 2026-11-10 STAGE 04 客戶側欄窄屏重疊修正
+
+### 需求說明
+1. 實測發現：視窗 ≤1024px（dashboard-layout 降為單欄）時，側欄的 `position: sticky`（原為 inline style）仍生效，釘在畫面上導致主欄圖表從其下方捲動而視覺重疊。
+
+### 重點改善選項 (CAPA)
+1. sticky／max-height 由 inline style 改為 class（`.order-customer-sidebar`、`.order-customer-list`，`src/index.css`），並於 `@media (max-width: 1024px)` 解除 sticky、限制清單高 320px；寬屏行為不變。
+
+---
+
 ## 2026-11-10 導覽列四階段卡同排（修正 STAGE 04 換行）
 
 ### 需求說明
