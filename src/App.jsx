@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { getMappings, saveMappings, resetMappings } from './utils/db';
+import { getMappings, saveMappings, resetMappings, getOrderCache, saveOrderCache, clearOrderCache } from './utils/db';
 import { parseExcelFile, parseSummaryExcel, parseSummaryJSON } from './utils/excelParser';
 import { runETLInBrowser, exportSummaryExcelInBrowser, exportSummaryJSONInBrowser, isUUID } from './utils/browserETL';
 import { generateMultiYearLLMPrompt, downloadFile, copyTextToClipboard, pickOutputDirectory, writeTextToFileTarget } from './utils/llmExport';
+import { parseOrderWorkbook } from './utils/orderParser';
 import * as XLSX from 'xlsx';
 
 const MONTH_LABELS = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
@@ -102,7 +103,7 @@ const Icons = {
 };
 
 function App() {
-  // Workflow Step: "step1_scan" | "step2_etl" | "step3_analytics"
+  // Workflow Step: "step1_scan" | "step2_etl" | "step3_analytics" | "step4_orders"
   const [activeStep, setActiveStep] = useState("step1_scan");
 
   // Step 1: Scan & Verify State (Lazy Initialized)
@@ -206,6 +207,16 @@ function App() {
   const [selectedNames, setSelectedNames] = useState(null); // null = 預設全選；陣列 = 自訂選取；[] = 已清空
   const [selectedMonth, setSelectedMonth] = useState(0);
   const [compareYearSelection, setCompareYearSelection] = useState({});
+
+  // Step 04: 訂單交期監看 State（與 QC 統計儀表盤完全隔離）
+  // orderData: { fileName, importedAt, years: { [year]: [row, ...] } } | null
+  const [orderData, setOrderData] = useState(() => getOrderCache());
+  const [orderYear, setOrderYear] = useState("all");        // "all" | "2026" | ...
+  const [orderMonth, setOrderMonth] = useState(0);          // 0 = 全年；1-12 = 單月
+  const [orderCustomers, setOrderCustomers] = useState(null); // null = 全部選取；[] = 清空
+  const [orderStatus, setOrderStatus] = useState("all");    // all | done | pending | overdue
+  const [orderSearch, setOrderSearch] = useState("");       // 品名 / 訂單號搜尋
+  const [orderCustomerMetric, setOrderCustomerMetric] = useState("qty"); // qty | count
 
   // Modals & UI States
   const [showMappingsModal, setShowMappingsModal] = useState(false);
@@ -1001,6 +1012,255 @@ function App() {
 
   }, [effectiveSelectedItems, activeSheet, summaryData, selectedMonth, activeYear, summaryFiles, compareYearSelection]);
 
+  // ===================== Step 04: 訂單交期監看 — 匯入與計算（獨立於 QC 統計） =====================
+
+  const handleOrderFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = null;
+    if (files.length === 0) return;
+    try {
+      const { years } = await parseOrderWorkbook(files[0]);
+      if (Object.keys(years).length === 0) {
+        alert("未在檔案中找到年度工作表（表頁需命名為「2026年」等格式）。");
+        return;
+      }
+      const next = {
+        fileName: files[0].name,
+        importedAt: new Date().toISOString(),
+        years
+      };
+      setOrderData(next);
+      saveOrderCache(next);
+      setOrderYear("all");
+      setOrderCustomers(null);
+      const stats = Object.entries(years).map(([y, r]) => `${y} 年 ${r.length} 筆`).join('、');
+      showToast(`已匯入訂單交期明細（${stats}）`);
+    } catch (err) {
+      console.error(err);
+      alert(`解析訂單明細表失敗: ${err.message}`);
+    }
+  };
+
+  const handleClearOrderData = () => {
+    if (!window.confirm("確定要清空已匯入的訂單交期資料嗎？")) return;
+    setOrderData(null);
+    clearOrderCache();
+    setOrderCustomers(null);
+    showToast("已清空訂單交期資料");
+  };
+
+  // 參與運算之原始列（年度篩選後，附加 year 欄）
+  const orderTodayISO = new Date().toISOString().slice(0, 10);
+  const orderAllRows = useMemo(() => {
+    if (!orderData) return [];
+    const yearKeys = orderYear === "all" ? Object.keys(orderData.years) : [orderYear];
+    return yearKeys.flatMap(y => (orderData.years[y] || []).map(r => ({ ...r, year: y })));
+  }, [orderData, orderYear]);
+
+  // 客戶 pill 候選清單（依筆數降序）
+  const orderCustomerList = useMemo(() => {
+    const cnt = {};
+    orderAllRows.forEach(r => { cnt[r.customer] = (cnt[r.customer] || 0) + 1; });
+    return Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(([name]) => name);
+  }, [orderAllRows]);
+
+  // 語意沿用 QC 儀表盤三態：null = 全部選取；[] = 清空
+  const orderEffectiveCustomers = useMemo(() => {
+    if (orderCustomers === null) return orderCustomerList;
+    const available = new Set(orderCustomerList);
+    return orderCustomers.filter(name => available.has(name));
+  }, [orderCustomers, orderCustomerList]);
+
+  const orderFilteredRows = useMemo(() => {
+    const custSet = new Set(orderEffectiveCustomers);
+    const q = orderSearch.trim().toLowerCase();
+    const overdueISO = new Date().toISOString().slice(0, 10);
+    return orderAllRows.filter(r => {
+      if (!custSet.has(r.customer)) return false;
+      if (orderMonth > 0 && parseInt(r.originalDue.slice(5, 7), 10) !== orderMonth) return false;
+      if (orderStatus === 'done' && !r.shipDone) return false;
+      if (orderStatus === 'pending' && r.shipDone) return false;
+      if (orderStatus === 'overdue' && (r.shipDone || !r.latestDue || r.latestDue >= overdueISO)) return false;
+      if (q && !r.product.toLowerCase().includes(q) && !r.orderNo.toLowerCase().includes(q) && !r.lotNo.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [orderAllRows, orderEffectiveCustomers, orderMonth, orderStatus, orderSearch]);
+
+  const orderInsights = useMemo(() => {
+    const rows = orderFilteredRows;
+    const totalOrders = rows.length;
+    const totalQty = rows.reduce((a, r) => a + (r.qty || 0), 0);
+    const doneOrders = rows.filter(r => r.shipDone).length;
+    const doneRate = totalOrders > 0 ? Math.round((doneOrders / totalOrders) * 100) : null;
+    const changedCount = rows.filter(r => r.dueChanged || (r.revisedCount || 0) > 0).length;
+    const reviseRate = totalOrders > 0 ? Math.round((changedCount / totalOrders) * 100) : null;
+    const delays = rows.map(r => r.delayDays).filter(d => d !== null && d !== undefined);
+    const avgDelay = delays.length > 0 ? Math.round(delays.reduce((a, b) => a + b, 0) / delays.length) : null;
+    const overdueISO = new Date().toISOString().slice(0, 10);
+    const overdueRows = rows
+      .filter(r => !r.shipDone && r.latestDue && r.latestDue < overdueISO)
+      .sort((a, b) => a.latestDue.localeCompare(b.latestDue));
+    const revisedTotalQty = rows.filter(r => r.dueChanged).reduce((a, r) => a + (r.qty || 0), 0);
+    return { totalOrders, totalQty, doneOrders, doneRate, changedCount, reviseRate, avgDelay, overdueRows, revisedTotalQty };
+  }, [orderFilteredRows]);
+
+  const orderChartData = useMemo(() => {
+    const rows = orderFilteredRows;
+    const monthOf = (r) => parseInt(r.originalDue.slice(5, 7), 10) - 1;
+
+    // 1. 月份趨勢（年度=all 時逐年堆疊；單年度時 訂單數 + 數量雙軸）
+    const trendYears = (orderData && orderYear === "all") ? Object.keys(orderData.years).sort() : [];
+    let trend;
+    if (trendYears.length > 1) {
+      trend = {
+        labels: MONTH_LABELS,
+        datasets: trendYears.map((y, i) => {
+          const yrRows = rows.filter(r => r.year === y);
+          return {
+            label: `${y} 年 訂單數`,
+            data: MONTH_LABELS.map((_, mi) => yrRows.filter(r => monthOf(r) === mi).length),
+            backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length],
+            borderRadius: 2,
+          };
+        }),
+      };
+    } else {
+      trend = {
+        labels: MONTH_LABELS,
+        datasets: [
+          {
+            label: '訂單數',
+            data: MONTH_LABELS.map((_, mi) => rows.filter(r => monthOf(r) === mi).length),
+            backgroundColor: CHART_PALETTE[0],
+            borderRadius: 2,
+            yAxisID: 'y1',
+          },
+          {
+            label: '數量 (pcs)',
+            type: 'line',
+            data: MONTH_LABELS.map((_, mi) => rows.filter(r => monthOf(r) === mi).reduce((a, r) => a + (r.qty || 0), 0)),
+            borderColor: CHART_PALETTE[1],
+            backgroundColor: CHART_PALETTE[1],
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 2,
+            yAxisID: 'y2',
+          },
+        ],
+      };
+    }
+
+    // 2. 客戶 Top10（metric 可切換 數量 / 訂單數）
+    const custAgg = {};
+    rows.forEach(r => {
+      if (!custAgg[r.customer]) custAgg[r.customer] = { qty: 0, count: 0 };
+      custAgg[r.customer].qty += (r.qty || 0);
+      custAgg[r.customer].count += 1;
+    });
+    const custTop = Object.entries(custAgg)
+      .sort((a, b) => b[1][orderCustomerMetric] - a[1][orderCustomerMetric])
+      .slice(0, 10)
+      .map(([name]) => name);
+    const customerChart = {
+      labels: custTop,
+      datasets: [
+        {
+          label: orderCustomerMetric === 'qty' ? '數量 (pcs)' : '訂單數',
+          data: custTop.map(name => custAgg[name][orderCustomerMetric]),
+          backgroundColor: CHART_PALETTE[0],
+          borderRadius: 2,
+        },
+      ],
+    };
+
+    // 3. 品名 Top10（以數量為序）
+    const prodAgg = {};
+    rows.forEach(r => {
+      if (!prodAgg[r.product]) prodAgg[r.product] = { qty: 0, count: 0 };
+      prodAgg[r.product].qty += (r.qty || 0);
+      prodAgg[r.product].count += 1;
+    });
+    const prodTop = Object.entries(prodAgg).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10).map(([name]) => name);
+    const productChart = {
+      labels: prodTop,
+      datasets: [
+        {
+          label: '數量 (pcs)／訂單數',
+          data: prodTop.map(n => prodAgg[n].qty),
+          backgroundColor: CHART_PALETTE[3],
+          borderRadius: 2,
+        },
+      ],
+    };
+
+    // 4. 客戶 × 月份堆疊（前 8 大客戶）
+    const stackTop = Object.entries(custAgg).sort((a, b) => b[1].count - a[1].count).slice(0, 8).map(([name]) => name);
+    const stackChart = {
+      labels: MONTH_LABELS,
+      datasets: stackTop.map((name, i) => ({
+        label: name,
+        data: MONTH_LABELS.map((_, mi) => rows.filter(r => r.customer === name && monthOf(r) === mi).length),
+        backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length],
+        borderRadius: 2,
+      })),
+    };
+
+    // 5. 交期延遲分桶直方圖
+    const buckets = { '提前': 0, '準時': 0, '1-7天': 0, '8-30天': 0, '31天以上': 0 };
+    rows.forEach(r => {
+      const d = r.delayDays;
+      if (d === null || d === undefined) return;
+      if (d === 0) buckets['準時']++;
+      else if (d > 0 && d <= 7) buckets['1-7天']++;
+      else if (d > 7 && d <= 30) buckets['8-30天']++;
+      else if (d > 30) buckets['31天以上']++;
+      else buckets['提前']++;
+    });
+    const delayChart = {
+      labels: Object.keys(buckets),
+      datasets: [
+        {
+          label: '訂單數',
+          data: Object.values(buckets),
+          backgroundColor: [ '#5FA8D3', '#4E9E92', '#C68A2E', '#C4574E', '#7C7BD1' ],
+          borderRadius: 2,
+        },
+      ],
+    };
+
+    // 6. 履約狀態甜甜圈
+    const doneCnt = rows.filter(r => r.shipDone).length;
+    const statusChart = {
+      labels: ['出貨報表完成', '尚未完成'],
+      datasets: [
+        {
+          data: [doneCnt, rows.length - doneCnt],
+          backgroundColor: [ CHART_PALETTE[1], CHART_PALETTE[3] ],
+          borderWidth: 0,
+        },
+      ],
+    };
+
+    // 7. 交期異動時間軸（修正訂單發出月份分布；缺漏時以通知單號日期遞補）
+    const reviseCounts = MONTH_LABELS.map((_, mi) => rows.filter(r => {
+      const d = r.fixIssueDate || r.notifyDate;
+      return d ? parseInt(d.slice(5, 7), 10) - 1 === mi : false;
+    }).length);
+    const reviseChart = {
+      labels: MONTH_LABELS,
+      datasets: [
+        {
+          label: '異動發出件數',
+          data: reviseCounts,
+          backgroundColor: CHART_PALETTE[2],
+          borderRadius: 2,
+        },
+      ],
+    };
+
+    return { trend, customerChart, productChart, stackChart, delayChart, statusChart, reviseChart };
+  }, [orderFilteredRows, orderData, orderYear, orderCustomerMetric]);
+
   const handleOpenLLMModal = () => {
     let filesForLLM = { ...summaryFiles };
     if (Object.keys(filesForLLM).length === 0 && cachedCounts) {
@@ -1209,6 +1469,18 @@ function App() {
             <span className="step-tag">STAGE 03</span>
             <span className="step-title">跨年度品質趨勢與大模型診斷</span>
             <span className="step-desc">{Object.keys(summaryFiles).length > 0 ? `已匯入 ${Object.keys(summaryFiles).length} 個年度` : '製程能力分析與 AI 審查'}</span>
+          </div>
+        </button>
+
+        <button 
+          className={`step-card ${activeStep === 'step4_orders' ? 'active' : ''} ${orderData ? 'completed' : ''}`}
+          onClick={() => setActiveStep('step4_orders')}
+        >
+          <div className="step-number">04</div>
+          <div className="step-content">
+            <span className="step-tag">STAGE 04</span>
+            <span className="step-title">訂單與交期多維度監看</span>
+            <span className="step-desc">{orderData ? `已匯入 ${Object.keys(orderData.years).length} 個年度訂單` : '客戶訂單交期明細儀表盤'}</span>
           </div>
         </button>
       </nav>
@@ -1809,6 +2081,313 @@ function App() {
       )}
 
       {/* ========================================================================= */}
+      {/* STAGE 04: ORDER & DELIVERY MULTI-DIMENSION MONITORING DASHBOARD */}
+      {/* ========================================================================= */}
+      {activeStep === 'step4_orders' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Top Control Bar */}
+          <div className="panel-card" style={{ padding: '12px 18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <input
+                  type="file"
+                  accept=".xlsx"
+                  onChange={handleOrderFileChange}
+                  id="order-file-input"
+                  style={{ display: 'none' }}
+                />
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => document.getElementById('order-file-input')?.click()}
+                >
+                  <Icons.Download />
+                  <span>匯入訂單交期明細表 (.xlsx)</span>
+                </button>
+
+                {orderData && (
+                  <button className="btn btn-danger btn-sm" onClick={handleClearOrderData}>
+                    <Icons.Trash />
+                    <span>清空訂單資料</span>
+                  </button>
+                )}
+
+                {orderData && (
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: '6px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>年度：</span>
+                    <button
+                      className={`btn btn-sm ${orderYear === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => { setOrderYear('all'); setOrderCustomers(null); }}
+                    >
+                      全部年度
+                    </button>
+                    {Object.keys(orderData.years).sort().map(year => (
+                      <button
+                        key={year}
+                        className={`btn btn-sm ${orderYear === year ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => { setOrderYear(year); setOrderCustomers(null); }}
+                      >
+                        {year} 年
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {orderData && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>月份：</span>
+                  <select
+                    className="filter-select"
+                    value={orderMonth}
+                    onChange={(e) => setOrderMonth(parseInt(e.target.value, 10))}
+                  >
+                    <option value={0}>全年度 (1-12月)</option>
+                    {MONTH_LABELS.map((label, idx) => (
+                      <option key={idx + 1} value={idx + 1}>{label}</option>
+                    ))}
+                  </select>
+
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>狀態：</span>
+                  <select
+                    className="filter-select"
+                    value={orderStatus}
+                    onChange={(e) => setOrderStatus(e.target.value)}
+                  >
+                    <option value="all">全部</option>
+                    <option value="done">出貨報表已完成</option>
+                    <option value="pending">未完成</option>
+                    <option value="overdue">逾期未出貨</option>
+                  </select>
+
+                  <input
+                    className="filter-select"
+                    type="text"
+                    placeholder="搜尋品名/訂單號/批號"
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    style={{ width: '180px' }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {orderData && (
+              <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                SOURCE: {orderData.fileName} · 匯入時間: {orderData.importedAt.slice(0, 16).replace('T', ' ')}
+              </div>
+            )}
+          </div>
+
+          {!orderData ? (
+            <div
+              className="panel-card upload-zone"
+              style={{ padding: '70px 0', textAlign: 'center' }}
+              onClick={() => document.getElementById('order-file-input')?.click()}
+            >
+              <Icons.FileText />
+              <h3 style={{ fontSize: '17px', fontWeight: 700, marginTop: '10px' }}>尚未匯入任何訂單交期資料</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
+                點擊此區匯入「客戶訂單與交期明細表.xlsx」（日常更新檔，一年一工作表）。匯入後自動快取，重新整理免重選。
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* KPI Cards */}
+              <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
+                <div className="kpi-card">
+                  <span className="kpi-label">TOTAL ORDERS (訂單總數)</span>
+                  <span className="kpi-val">{orderInsights.totalOrders.toLocaleString()}</span>
+                </div>
+                <div className="kpi-card">
+                  <span className="kpi-label">TOTAL QTY (應交總數量 pcs)</span>
+                  <span className="kpi-val">{orderInsights.totalQty.toLocaleString()}</span>
+                </div>
+                <div className="kpi-card">
+                  <span className="kpi-label">SHIP REPORT DONE (出貨報表完成率)</span>
+                  <span className="kpi-val" style={{ color: 'var(--med-cobalt)' }}>{orderInsights.doneRate === null ? 'N/A' : `${orderInsights.doneRate}%`}</span>
+                </div>
+                <div className="kpi-card">
+                  <span className="kpi-label">DUE REVISED (交期異動率)</span>
+                  <span className="kpi-val" style={{ color: 'var(--med-amber, #C68A2E)' }}>{orderInsights.reviseRate === null ? 'N/A' : `${orderInsights.reviseRate}%`}</span>
+                </div>
+                <div className="kpi-card">
+                  <span className="kpi-label">AVG DELAY (平均交期延遲)</span>
+                  <span className="kpi-val">{orderInsights.avgDelay === null ? 'N/A' : `${orderInsights.avgDelay} 日`}</span>
+                </div>
+                <div className="kpi-card">
+                  <span className="kpi-label">OVERDUE (逾期未出貨)</span>
+                  <span className="kpi-val" style={{ color: '#C4574E' }}>{orderInsights.overdueRows.length.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Customer Filter Pills */}
+              <div className="panel-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>客戶篩選（{orderCustomerList.length} 家）</h3>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>勾選客戶以聚焦下述所有圖表之資料範圍</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setOrderCustomers(null)}>全選</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setOrderCustomers([])}>清空</button>
+                  </div>
+                </div>
+                <div className="pills-container" style={orderCustomerList.length > 24 ? { maxHeight: '104px', overflowY: 'auto' } : undefined}>
+                  {orderCustomerList.map((name) => {
+                    const active = orderEffectiveCustomers.includes(name);
+                    return (
+                      <div
+                        key={name}
+                        className={`pill-item ${active ? 'active' : ''}`}
+                        onClick={() => {
+                          if (active) setOrderCustomers(orderEffectiveCustomers.filter(c => c !== name));
+                          else setOrderCustomers([...orderEffectiveCustomers, name]);
+                        }}
+                      >
+                        <span className="pill-check"></span>
+                        <span>{name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Monthly Trend (full width) */}
+              <div className="panel-card">
+                <div className="panel-header">
+                  <h3 className="panel-title">
+                    <Icons.Chart />
+                    <span>月份訂單趨勢 {orderYear !== 'all' ? `· ${orderYear} 年` : '（各年度堆疊）'}</span>
+                  </h3>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>依「原始訂單交期」月份歸類</span>
+                </div>
+                <div className="chart-card">
+                  <OrderChart
+                    type="bar"
+                    chart={orderChartData.trend}
+                    options={trendOptions(orderYear === 'all' && Object.keys(orderData.years).length > 1)}
+                  />
+                </div>
+              </div>
+
+              {/* 2x Grid of Dimension Charts */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '14px' }}>
+                <div className="panel-card">
+                  <div className="panel-header">
+                    <h3 className="panel-title"><Icons.Chart /><span>客戶 Top 10</span></h3>
+                    <select
+                      className="filter-select"
+                      value={orderCustomerMetric}
+                      onChange={(e) => setOrderCustomerMetric(e.target.value)}
+                      style={{ width: 'auto' }}
+                    >
+                      <option value="qty">以數量 (pcs) 排序</option>
+                      <option value="count">以訂單數排序</option>
+                    </select>
+                  </div>
+                  <div className="chart-card">
+                    <OrderChart type="bar" chart={orderChartData.customerChart} options={hbarOptions()} />
+                  </div>
+                </div>
+
+                <div className="panel-card">
+                  <div className="panel-header">
+                    <h3 className="panel-title"><Icons.Chart /><span>品名 Top 10（數量）</span></h3>
+                  </div>
+                  <div className="chart-card">
+                    <OrderChart type="bar" chart={orderChartData.productChart} options={hbarOptions()} />
+                  </div>
+                </div>
+
+                <div className="panel-card">
+                  <div className="panel-header">
+                    <h3 className="panel-title"><Icons.Chart /><span>客戶 × 月份 負載堆疊圖（前 8 大客戶）</span></h3>
+                  </div>
+                  <div className="chart-card">
+                    <OrderChart type="bar" chart={orderChartData.stackChart} options={stackedBarOptions()} />
+                  </div>
+                </div>
+
+                <div className="panel-card">
+                  <div className="panel-header">
+                    <h3 className="panel-title"><Icons.Chart /><span>交期延遲天數分布</span></h3>
+                  </div>
+                  <div className="chart-card">
+                    <OrderChart type="bar" chart={orderChartData.delayChart} options={verticalBarOptions()} />
+                  </div>
+                </div>
+
+                <div className="panel-card">
+                  <div className="panel-header">
+                    <h3 className="panel-title"><Icons.Chart /><span>出貨報表履約狀態</span></h3>
+                  </div>
+                  <div className="chart-card">
+                    <OrderChart type="doughnut" chart={orderChartData.statusChart} options={doughnutOptions()} height={260} />
+                  </div>
+                </div>
+
+                <div className="panel-card">
+                  <div className="panel-header">
+                    <h3 className="panel-title"><Icons.Chart /><span>交期異動時間軸（修正訂單發出月份）</span></h3>
+                  </div>
+                  <div className="chart-card">
+                    <OrderChart type="bar" chart={orderChartData.reviseChart} options={verticalBarOptions()} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Overdue Detail Table */}
+              <div className="panel-card">
+                <div className="panel-header">
+                  <h3 className="panel-title">
+                    <Icons.AlertTriangle />
+                    <span>逾期未出貨明細（{orderInsights.overdueRows.length} 筆，按最新交期排序）</span>
+                  </h3>
+                </div>
+                {orderInsights.overdueRows.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>目前篩選範圍內沒有逾期未出貨的訂單 ✓</p>
+                ) : (
+                  <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>最新交期</th>
+                          <th>原始交期</th>
+                          <th>已逾期</th>
+                          <th>客戶</th>
+                          <th>品名</th>
+                          <th>數量 (pcs)</th>
+                          <th>訂單號碼</th>
+                          <th>批號</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orderInsights.overdueRows.slice(0, 100).map((r, i) => {
+                          const overdueDays = Math.round((new Date(orderTodayISO) - new Date(r.latestDue)) / 86400000);
+                          return (
+                            <tr key={`${r.year}-${i}`}>
+                              <td>{r.latestDue}</td>
+                              <td>{r.originalDue}</td>
+                              <td style={{ color: '#C4574E', fontWeight: 600 }}>{overdueDays} 天</td>
+                              <td>{r.customer}</td>
+                              <td>{r.product}</td>
+                              <td>{r.qty.toLocaleString()}</td>
+                              <td>{r.orderNo}</td>
+                              <td>{r.lotNo}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* MODAL: LLM ANALYSIS PROMPT & DATASET EXPORT */}
       {/* ========================================================================= */}
       {showLLMModal && (
@@ -1954,6 +2533,132 @@ function App() {
 }
 
 export default App;
+
+/* ===================== Step 04: Order Dashboard Chart Kit ===================== */
+
+// 一般柱/甜甜圈共用的 tooltip 圖例樣式
+const ORDER_CHART_BASE = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: {
+        font: { family: 'Outfit, sans-serif', size: 11, weight: '600' },
+        usePointStyle: true,
+        boxWidth: 8
+      }
+    },
+    tooltip: {
+      padding: 8,
+      backgroundColor: '#2E3440',
+      titleFont: { family: 'Outfit, sans-serif', weight: 'bold', size: 12 },
+      bodyFont: { family: 'JetBrains Mono, monospace', size: 11 }
+    }
+  }
+};
+
+const trendOptions = (stackedYears) => ({
+  ...ORDER_CHART_BASE,
+  scales: stackedYears
+    ? {
+        x: { stacked: true, grid: { display: false }, ticks: { color: '#7A8394', font: { family: 'Outfit, sans-serif', size: 11 } } },
+        y1: { stacked: true, beginAtZero: true, grid: { color: '#E1E5EC', borderDash: [2, 2] }, ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
+      }
+    : {
+        x: { grid: { display: false }, ticks: { color: '#7A8394', font: { family: 'Outfit, sans-serif', size: 11 } } },
+        y1: { position: 'left', beginAtZero: true, grid: { color: '#E1E5EC', borderDash: [2, 2] }, ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
+        y2: { position: 'right', beginAtZero: true, grid: { display: false }, ticks: { color: '#4E9E92', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
+      },
+});
+
+const hbarOptions = () => ({
+  ...ORDER_CHART_BASE,
+  indexAxis: 'y',
+  plugins: {
+    ...ORDER_CHART_BASE.plugins,
+    legend: { display: false },
+  },
+  scales: {
+    x: { beginAtZero: true, grid: { color: '#E1E5EC', borderDash: [2, 2] }, ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
+    y: { grid: { display: false }, ticks: { color: '#4A5568', font: { family: 'Outfit, sans-serif', size: 11 } } },
+  },
+});
+
+const verticalBarOptions = () => ({
+  ...ORDER_CHART_BASE,
+  plugins: {
+    ...ORDER_CHART_BASE.plugins,
+    legend: { display: false },
+  },
+  scales: {
+    x: { grid: { display: false }, ticks: { color: '#4A5568', font: { family: 'Outfit, sans-serif', size: 11 } } },
+    y: { beginAtZero: true, grid: { color: '#E1E5EC', borderDash: [2, 2] }, ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
+  },
+});
+
+const stackedBarOptions = () => ({
+  ...ORDER_CHART_BASE,
+  scales: {
+    x: { stacked: true, grid: { display: false }, ticks: { color: '#7A8394', font: { family: 'Outfit, sans-serif', size: 11 } } },
+    y: { stacked: true, beginAtZero: true, grid: { color: '#E1E5EC', borderDash: [2, 2] }, ticks: { color: '#7A8394', font: { family: 'JetBrains Mono, monospace', size: 11 } } },
+  },
+});
+
+const doughnutOptions = () => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: '58%',
+  plugins: {
+    legend: {
+      position: 'right',
+      labels: {
+        font: { family: 'Outfit, sans-serif', size: 11, weight: '600' },
+        usePointStyle: true,
+        boxWidth: 8
+      }
+    },
+    tooltip: ORDER_CHART_BASE.plugins.tooltip,
+  },
+});
+
+/** 自管 Chart.js 實例的通用圖表元件（Step 04 監看儀表盤使用） */
+const OrderChart = ({ type, chart, options, height = 300 }) => {
+  const ref = useRef(null);
+  const inst = useRef(null);
+  const hasData = Boolean(chart && chart.labels && chart.datasets && chart.datasets.length > 0);
+
+  // 以序列化 spec 作為唯一依賴鍵：繪製資料實質變更時才重建圖表
+  const spec = useMemo(
+    () => JSON.stringify({ type, labels: chart?.labels, datasets: chart?.datasets, options }),
+    [type, chart, options]
+  );
+  const specObj = useMemo(() => JSON.parse(spec), [spec]);
+
+  useEffect(() => {
+    if (!specObj || !ref.current || !window.Chart) return;
+    inst.current = new window.Chart(ref.current, {
+      type,
+      data: { labels: specObj.labels, datasets: specObj.datasets },
+      options: specObj.options,
+    });
+    return () => {
+      if (inst.current) {
+        inst.current.destroy();
+        inst.current = null;
+      }
+    };
+  }, [specObj, type]);
+
+  if (!hasData) {
+    return (
+      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+        目前篩選條件下無資料
+      </div>
+    );
+  }
+  return <div style={{ height }}><canvas ref={ref} /></div>;
+};
 
 const ColumnFilterPopover = ({ 
   fieldKey, 

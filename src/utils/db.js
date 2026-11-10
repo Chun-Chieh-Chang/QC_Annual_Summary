@@ -39,3 +39,34 @@ export const resetMappings = () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_MAPPINGS));
   return DEFAULT_MAPPINGS;
 };
+
+// ===== 訂單交期監看資料快取（Step 04）=====
+// 構造：{ fileName, importedAt, years: { [year: string]: [row, ...] } }
+const ORDER_CACHE_KEY = "qc_order_data_cache";
+
+export const getOrderCache = () => {
+  try {
+    const stored = localStorage.getItem(ORDER_CACHE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (!parsed || !parsed.years || Object.keys(parsed.years).length === 0) return null;
+    return parsed;
+  } catch (e) {
+    console.error("Failed to load order cache from localStorage", e);
+    return null;
+  }
+};
+
+export const saveOrderCache = (data) => {
+  try {
+    localStorage.setItem(ORDER_CACHE_KEY, JSON.stringify(data));
+    return true;
+  } catch (e) {
+    console.error("Failed to save order cache to localStorage", e);
+    return false;
+  }
+};
+
+export const clearOrderCache = () => {
+  localStorage.removeItem(ORDER_CACHE_KEY);
+};
