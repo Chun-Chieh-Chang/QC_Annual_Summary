@@ -1155,17 +1155,15 @@ function App() {
               categoryPercentage: 0.85,
             }
           : {
-              type: 'line',
+              type: 'bar',
               label: '數量 (萬 pcs)',
               data: monthQtyW,
               rawLabels: monthQtyW.map(fmtQtyLabel),
-              borderColor: CHART_PALETTE[1],
-              backgroundColor: 'rgba(78,158,146,.10)',
-              borderWidth: 2,
-              pointRadius: 2.5,
-              pointBackgroundColor: CHART_PALETTE[1],
-              fill: true,
-              tension: 0.35,
+              backgroundColor: CHART_PALETTE[1],
+              hoverBackgroundColor: '#3E8478',
+              borderRadius: 4,
+              barPercentage: 0.66,
+              categoryPercentage: 0.85,
             },
       ],
     };
@@ -2326,7 +2324,7 @@ function App() {
                 </div>
                 <div className="chart-card">
                   <OrderChart
-                    type={orderTrendMetric === 'count' ? 'bar' : 'line'}
+                    type="bar"
                     chart={orderChartData.trend}
                     options={trendOptionsB(orderTrendMetric, orderChartData.trend && orderChartData.trend.trendMax)}
                   />
